@@ -13,7 +13,6 @@ _: {
     ];
     casks = [
       "nikitabobko/tap/aerospace"
-      "wireshark-chmodbpf"
       "dropbox"
     ];
 

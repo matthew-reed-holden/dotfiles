@@ -2,8 +2,8 @@
 {
   homebrew = {
     brews = [
-      "asdf" # Multiple runtime environment manager
       "nuget" # Dotnet package manager
+      "nvm" # Node version manager
       "pyenv" # Python environment manager
       "pyenv-virtualenv" # Python virtualenv manager
       "sdkman-cli" # Managing sdks

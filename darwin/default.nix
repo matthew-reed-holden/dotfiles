@@ -134,10 +134,11 @@
   security.pam.services.sudo_local.touchIdAuth = true;
 
   services = {
-    tailscale.enable = true;
   };
 
   system = {
+    primaryUser = "matthewholden";
+
     stateVersion = 6;
     # activationScripts run every time you boot the system or execute `darwin-rebuild`
     activationScripts = {
@@ -148,10 +149,6 @@
         } \"$systemConfig\" || true";
       };
 
-      # reload the settings and apply them without the need to logout/login
-      postUserActivation.text = ''
-        /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
-      '';
     };
 
     defaults = {

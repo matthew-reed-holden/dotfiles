@@ -16,8 +16,6 @@ in
   imports = [
     inputs.catppuccin.homeModules.catppuccin
     inputs.nix-index-database.hmModules.nix-index
-    ./_mixins/features
-    ./_mixins/desktop
   ];
 
   catppuccin = {
@@ -120,48 +118,11 @@ in
       };
     };
 
-    bottom = {
-      enable = true;
-      settings = {
-        disk_filter = {
-          is_list_ignored = true;
-          list = [ "/dev/loop" ];
-          regex = true;
-          case_sensitive = false;
-          whole_word = false;
-        };
-        flags = {
-          dot_marker = false;
-          enable_gpu_memory = true;
-          group_processes = true;
-          hide_table_gap = true;
-          mem_as_value = true;
-          tree = true;
-        };
-      };
-    };
-
-    btop = {
-      enable = true;
-      package = pkgs.btop.override {
-        cudaSupport = true;
-      };
-    };
-
     dircolors = {
       enable = true;
       enableBashIntegration = true;
       enableFishIntegration = true;
       enableZshIntegration = true;
-    };
-
-    direnv = {
-      enable = true;
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-      nix-direnv = {
-        enable = true;
-      };
     };
 
     eza = {
@@ -202,14 +163,6 @@ in
     };
 
     home-manager.enable = true;
-
-    jetbrains-remote = {
-      enable = true;
-    };
-
-    joplin-desktop = {
-      enable = true;
-    };
 
     jq.enable = true;
 
@@ -331,8 +284,6 @@ in
         #### PYTHON ####
         ###############
 
-
-
         ### JETBRAINS ###
         #################
 
@@ -368,26 +319,17 @@ in
       historySubstringSearch = {
         enable = true;
       };
-      # Extra commands that should be added to .zshrc.
-      initExtra = ''
-        #### ONEPASSWORD ###
-        ####################
-
-      '';
       # Extra commands that should be added to .zshrc before compinit.
-      initExtraBeforeCompInit = ''
+      initContent = lib.mkOrder 550 ''
         ### HOMEBREW ###
         ################
         eval "$(/opt/homebrew/bin/brew shellenv)"
 
-        #### ASDF #####
-        ###############
-
-        export ASDF_DATA_DIR="$HOME/asdf"
-        export PATH="$ASDF_DATA_DIR/shims:$PATH"
-
-        [[ -d $ASDF_DATA_DIR/completions ]] && asdf completion zsh > "$ASDF_DATA_DIR/completions/_asdf"
-        export FPATH="$ASDF_DATA_DIR/completions:$FPATH"
+        ###### NVM ########
+        ###################
+         export NVM_DIR="$HOME/.nvm"
+        [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
+        [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
 
         ###### PYENV ######
         ##################
@@ -396,8 +338,6 @@ in
         [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
         eval "$(pyenv init - zsh)"
         eval "$(pyenv virtualenv-init - zsh)"
-
-
 
         #### SDKMAN ####
         ################
@@ -409,7 +349,7 @@ in
         ###############
         ####JETBRAINS##
 
-        export PATH="$PATH:$HOME/jetbrains/bin"
+        export PATH="$PATH:$HOME/.jetbrains/bin"
 
         ####STREAMPIPES####
         ###################

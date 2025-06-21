@@ -9,6 +9,7 @@ _: {
 
     casks = [
       "sf-symbols"
+      "nikitabobko/tap/aerospace"
     ];
 
     taps = [

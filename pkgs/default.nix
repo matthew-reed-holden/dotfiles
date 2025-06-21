@@ -1,18 +1,8 @@
 # Custom packages, that can be defined similarly to ones from nixpkgs
 # You can build them using 'nix build .#example'
-pkgs:
-{
+pkgs: {
   # Local packages being prepped for upstreaming
-  defold = pkgs.callPackage ./defold { };
-  defold-bob = pkgs.callPackage ./defold-bob { };
-  defold-gdc = pkgs.callPackage ./defold-gdc { };
-  open-webui = pkgs.callPackage ./open-webui { };
-  station = pkgs.callPackage ./station { };
   nerd-font-patcher = pkgs.callPackage ./nerd-font-patcher { };
-
-  # Local packages to prevent unintended upgrades or carrying patches
-  gotosocial = pkgs.callPackage ./gotosocial { };
-  owncast = pkgs.callPackage ./owncast { };
 
   # Local fonts
   # - https://yildiz.dev/posts/packing-custom-fonts-for-nixos/
@@ -33,6 +23,4 @@ pkgs:
   spaceport-2006-font = pkgs.callPackage ./fonts/spaceport-2006-font { };
   zx-spectrum-7-font = pkgs.callPackage ./fonts/zx-spectrum-7-font { };
 
-  # Non-redistributable packages
-  cider = pkgs.callPackage ./cider { };
 }

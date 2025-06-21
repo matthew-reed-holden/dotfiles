@@ -2,16 +2,14 @@
 {
   homebrew = {
     brews = [
-      "composer"
+      "awscli"
       "docker"
       "docker-completion"
       "jupyter"
       "jupyterlab"
-      "lazydocker"
       "neovim"
       "nowplaying-cli"
       "mono-libgdiplus"
-      "newman"
       "pre-commit"
       "switchaudio-osx"
     ];
@@ -20,9 +18,7 @@
       "git-credential-manager"
       "sf-symbols"
       "ghostty"
-      "julia"
       "postman"
-      "insomnia"
     ];
 
   };
@@ -31,7 +27,6 @@
     kubernetes-helm
     kubectl
     helm-ls
-    hugo
     helmfile
     helmsman
     helm-docs
