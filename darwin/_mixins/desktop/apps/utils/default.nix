@@ -12,8 +12,10 @@ _: {
       "gawk"
     ];
     casks = [
-      "nikitabobko/tap/aerospace"
       "dropbox"
+      "google-chrome"
+      "nikitabobko/tap/aerospace"
+      "obsidian"
     ];
 
   };

@@ -59,8 +59,8 @@
       # home-manager switch -b backup --flake $HOME/.config
       # nix run nixpkgs#home-manager -- switch -b backup --flake "${HOME}/.config
       homeConfigurations = {
-        "matthewholden" = helper.mkHome {
-          username = "matthewholden";
+        "holdem3" = helper.mkHome {
+          username = "holdem3";
           hostname = "C002108230";
           platform = "aarch64-darwin";
           desktop = "aqua";
@@ -71,7 +71,7 @@
       #nix build .#darwinConfigurations.{hostname}.config.system.build.toplevel
       darwinConfigurations = {
         C002108230 = helper.mkDarwin {
-          username = "matthewholden";
+          username = "holdem3";
           hostname = "C002108230";
         };
       };

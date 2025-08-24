@@ -40,6 +40,7 @@
       grpc-gateway
       imagemagick
       lua
+      libpq
       luajit
       m-cli
       mas
@@ -106,6 +107,7 @@
         nix-path = config.nix.nixPath;
         trusted-users = [
           "root"
+          "holdem3"
           "matthewholden"
           "holdem3_cat"
         ];
@@ -137,7 +139,7 @@
   };
 
   system = {
-    primaryUser = "matthewholden";
+    primaryUser = "holdem3";
 
     stateVersion = 6;
     # activationScripts run every time you boot the system or execute `darwin-rebuild`

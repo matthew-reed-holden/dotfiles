@@ -5,7 +5,7 @@
   ...
 }:
 let
-  installFor = [ "matthewholden" ];
+  installFor = [ "holdem3" ];
 in
 lib.mkIf (lib.elem username installFor) {
   environment.systemPackages = with pkgs; [
@@ -14,7 +14,7 @@ lib.mkIf (lib.elem username installFor) {
   homebrew = {
     casks = [
       "shottr"
-      #      "blender"
+      "blender"
     ];
   };
 }

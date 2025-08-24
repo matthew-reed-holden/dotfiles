@@ -125,6 +125,12 @@ in
       enableZshIntegration = true;
     };
 
+    direnv = {
+      enable = true;
+      enableZshIntegration = true;
+      nix-direnv.enable = true;
+    };
+
     eza = {
       enable = true;
       enableBashIntegration = true;
@@ -261,6 +267,11 @@ in
       options = [ "--cmd cd" ];
     };
 
+    vscode = {
+      enable = true;
+    };
+
+
     zsh = {
       autocd = true;
       autosuggestion = {
@@ -269,17 +280,17 @@ in
       completionInit = ''
         autoload -U compinit && compinit
       '';
-      dotDir = ".config/zsh";
+      dotDir = "${config.xdg.configHome}/zsh";
       enable = true;
       enableCompletion = true;
       enableVteIntegration = true;
       envExtra = ''
-        export DOTFILES="$HOME/.config"
+        export DOTFILES="${config.xdg.configHome}"
 
         ### ASDF ####
         #############
 
-        export ASDF_CONFIG_FILE="$DOTFILES/asdf/.asdfrc"
+        export ASDF_CONFIG_FILE="${config.xdg.configHome}/asdf/.asdfrc"
 
         #### PYTHON ####
         ###############
@@ -287,7 +298,7 @@ in
         ### JETBRAINS ###
         #################
 
-        export FLEET_PROPERTIES_FILE="$DOTFILES/jetbrains/fleet/fleet.properties"
+        export FLEET_PROPERTIES_FILE="${config.xdg.configHome}/jetbrains/fleet/fleet.properties"
 
         ###### GO #######
         #################
@@ -391,6 +402,8 @@ in
       syntaxHighlighting = {
         enable = true;
       };
+
+
       zsh-abbr = {
         enable = true;
         abbreviations = { };

@@ -7,5 +7,9 @@ _: {
       "ollama"
     ];
 
+    brews = [
+      "stockfish"
+    ];
+
   };
 }

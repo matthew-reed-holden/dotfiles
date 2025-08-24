@@ -19,6 +19,8 @@
       "sf-symbols"
       "ghostty"
       "postman"
+      "warp"
+      "atomicjar/tap/testcontainers-desktop" # test containers desktop
     ];
 
   };

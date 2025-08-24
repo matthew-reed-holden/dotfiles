@@ -9,14 +9,14 @@
   mkHome =
     {
       hostname,
-      username ? "matthewholden",
+      username ? "holdem3",
       desktop ? null,
       platform ? "x86_64-linux",
     }:
     let
       isISO = builtins.substring 0 4 hostname == "iso-";
       isInstall = !isISO;
-      isLaptop = hostname == "matthewholden";
+      isLaptop = hostname == "holdem3";
       isWorkstation = builtins.isString desktop;
     in
     inputs.home-manager.lib.homeManagerConfiguration {
@@ -43,7 +43,7 @@
     {
       desktop ? "aqua",
       hostname,
-      username ? "matthewholden",
+      username ? "holdem3",
       platform ? "aarch64-darwin",
     }:
     let
