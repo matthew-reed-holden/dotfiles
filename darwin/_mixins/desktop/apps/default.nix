@@ -5,6 +5,7 @@ _: {
     ./dbs
     ./dev
     ./graphics
+    ./go
     ./iot
     ./interpreters
     ./password

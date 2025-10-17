@@ -4,8 +4,8 @@
 
     brews = [
       "cmake" # Required for timescaledb
-      #  "timescaledb"
       "libpq"
+      "postgresql@14"
       "postgresql@16"
       "postgresql@17"
     ];
@@ -15,9 +15,6 @@
       "clickhouse"
     ];
 
-    #taps = [
-    #"timescale/tap"
-    #];
   };
 
   environment.systemPackages = with pkgs; [

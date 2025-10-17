@@ -3,8 +3,6 @@
   homebrew = {
     brews = [
       "biome"
-      "go"
-      "gopls"
     ];
 
   };

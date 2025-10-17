@@ -16,11 +16,12 @@
 
     casks = [
       "git-credential-manager"
-      "sf-symbols"
+      "godot"
       "ghostty"
+      "logisim-evolution"
       "postman"
+      "sf-symbols"
       "warp"
-      "atomicjar/tap/testcontainers-desktop" # test containers desktop
     ];
 
   };

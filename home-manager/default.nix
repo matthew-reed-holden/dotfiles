@@ -18,6 +18,9 @@ in
     inputs.nix-index-database.hmModules.nix-index
   ];
 
+  xdg.enable = true;
+  xdg.configHome = "/Users/holdem3/.config";
+
   catppuccin = {
     accent = "blue";
     flavor = "mocha";
@@ -32,6 +35,7 @@ in
     yazi.enable = config.programs.yazi.enable;
   };
 
+
   home = {
     inherit stateVersion;
     inherit username;
@@ -39,6 +43,7 @@ in
     enableNixpkgsReleaseCheck = true;
 
     homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
+    
 
     file = {
       "${config.xdg.configHome}/fastfetch/config.jsonc".text =

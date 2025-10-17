@@ -16,6 +16,7 @@ _: {
       "google-chrome"
       "nikitabobko/tap/aerospace"
       "obsidian"
+      "slack"
     ];
 
   };
