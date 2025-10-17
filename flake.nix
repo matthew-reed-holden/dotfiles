@@ -65,6 +65,13 @@
           platform = "aarch64-darwin";
           desktop = "aqua";
         };
+
+        "matthewholden" = helper.mkHome {
+          username = "matthewholden";
+          hostname = "Matthews-MacBook-Pro-2";
+          platform = "aarch64-darwin";
+          desktop = "aqua";
+        };
       };
 
       #nix run nix-darwin -- switch --flake ~/Zero/nix-config
@@ -73,6 +80,11 @@
         C002108230 = helper.mkDarwin {
           username = "holdem3";
           hostname = "C002108230";
+        };
+
+        "Matthews-MacBook-Pro-2" = helper.mkDarwin {
+          username = "matthewholden";
+          hostname = "Matthews-MacBook-Pro-2";
         };
       };
 

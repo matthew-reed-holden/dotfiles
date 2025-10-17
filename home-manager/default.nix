@@ -19,7 +19,7 @@ in
   ];
 
   xdg.enable = true;
-  xdg.configHome = "/Users/holdem3/.config";
+  xdg.configHome = "/Users/${username}/.config";
 
   catppuccin = {
     accent = "blue";

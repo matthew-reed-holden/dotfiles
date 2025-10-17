@@ -9,7 +9,7 @@
   mkHome =
     {
       hostname,
-      username ? "holdem3",
+      username,
       desktop ? null,
       platform ? "x86_64-linux",
     }:
@@ -43,7 +43,7 @@
     {
       desktop ? "aqua",
       hostname,
-      username ? "holdem3",
+      username,
       platform ? "aarch64-darwin",
     }:
     let

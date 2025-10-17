@@ -107,9 +107,7 @@
         nix-path = config.nix.nixPath;
         trusted-users = [
           "root"
-          "holdem3"
-          "matthewholden"
-          "holdem3_cat"
+          "${username}"
         ];
         warn-dirty = false;
       };
@@ -139,7 +137,7 @@
   };
 
   system = {
-    primaryUser = "holdem3";
+    primaryUser = "${username}";
 
     stateVersion = 6;
     # activationScripts run every time you boot the system or execute `darwin-rebuild`
