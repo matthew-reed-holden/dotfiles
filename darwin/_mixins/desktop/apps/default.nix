@@ -1,6 +1,7 @@
 _: {
   imports = [
     ./ai
+    ./browsers
     ./cmd_center
     ./dbs
     ./dev
@@ -10,6 +11,7 @@ _: {
     ./interpreters
     ./password
     ./pkg-manage
+    ./pentest
     ./sketchybar
     ./utils
   ];

@@ -4,15 +4,16 @@
 
     brews = [
       "cmake" # Required for timescaledb
-      "libpq"
-      "postgresql@14"
-      "postgresql@16"
-      "postgresql@17"
+      "libpq" # 
+      "postgresql@14" # Needed for psql cli
+      "postgresql@17" # psql-17
+      "sqlite3"
     ];
 
     casks = [
-      "pgadmin4"
       "clickhouse"
+      "dropbox"
+      "pgadmin4"
     ];
 
   };
