@@ -4,10 +4,6 @@
     brews = [
       "nuget" # Dotnet package manager
       "nvm" # Node version manager
-      "pyenv" # Python environment manager
-      "pyenv-virtualenv" # Python virtualenv manager
-      "sdkman-cli" # Managing sdks
-      "uv" # Python package manager build on rust
     ];
 
     casks = [
