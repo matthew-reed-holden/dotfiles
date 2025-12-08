@@ -15,7 +15,6 @@
     coursier
     jdk
     jdk17
-    jdk23
     jre8
     luajit_openresty
     scala
