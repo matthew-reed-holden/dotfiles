@@ -10,10 +10,6 @@
       "jetbrains-toolbox" # Jetbrains IDE manager
     ];
 
-    taps = [
-      "sdkman/tap" # SDKMAN tap
-    ];
-
   };
 
   environment.systemPackages = with pkgs; [

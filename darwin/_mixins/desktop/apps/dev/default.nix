@@ -3,8 +3,10 @@
   homebrew = {
     brews = [
       "awscli"
+      "cocoapods"
       "docker"
       "docker-completion"
+      "git-flow-avh"
       "jupyter"
       "jupyterlab"
       "neovim"
@@ -19,9 +21,7 @@
       "godot"
       "ghostty"
       "logisim-evolution"
-      "postman"
       "sf-symbols"
-      "warp"
     ];
 
   };

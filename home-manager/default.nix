@@ -347,21 +347,6 @@ in
         [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
         [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
 
-        ###### PYENV ######
-        ##################
-
-
-        [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-        eval "$(pyenv init - zsh)"
-        eval "$(pyenv virtualenv-init - zsh)"
-
-        #### SDKMAN ####
-        ################
-
-        export SDKMAN_DIR="$HOMEBREW_PREFIX/opt/sdkman-cli/libexec"
-        [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
-
-
         ###############
         ####JETBRAINS##
 
@@ -381,12 +366,6 @@ in
         ####################
         export PATH="$PATH:$DOTNET_ROOT:$DOTNET_TOOLS"
 
-        #### RUST ########
-        #################
-
-        export PATH="$HOME/.cargo/bin:$PATH"
-
-        export PATH="$HOME/.local/bin:$PATH"
       '';
       # Commands that should be added to top of .zshrc.
       initExtraFirst = '''';

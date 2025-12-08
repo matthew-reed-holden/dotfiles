@@ -11,7 +11,6 @@
     ];
 
     casks = [
-      "clickhouse"
       "dropbox"
       "pgadmin4"
     ];

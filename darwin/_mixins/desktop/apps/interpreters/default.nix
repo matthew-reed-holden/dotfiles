@@ -3,6 +3,7 @@
   homebrew = {
     brews = [
       "biome"
+      "llvm"
     ];
 
   };

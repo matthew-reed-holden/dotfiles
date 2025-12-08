@@ -30,7 +30,6 @@
       pkgs.zsh
     ];
     systemPackages = with pkgs; [
-      cargo
       git
       ghostscript
       grpc
@@ -49,9 +48,9 @@
       nvd
       php
       plistwatch
-      rustup
       texliveTeTeX
       tetex
+      uv # Hyper speed Python manager
       sops
       wireshark
       wget
