@@ -297,8 +297,6 @@ in
 
         export ASDF_CONFIG_FILE="${config.xdg.configHome}/asdf/.asdfrc"
 
-        #### PYTHON ####
-        ###############
 
         ### JETBRAINS ###
         #################
@@ -371,10 +369,6 @@ in
       initExtraFirst = '''';
       # Extra commands that should be added to .zlogin.
       loginExtra = '''';
-      # Extra commands that should be added to .zprofile.
-      profileExtra = ''
-        export PYENV_ROOT="$HOME/.pyenv"
-      '';
       # Environment variables that will be set for zsh session.
       sessionVariables = {
 

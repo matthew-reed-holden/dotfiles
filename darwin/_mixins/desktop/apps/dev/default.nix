@@ -2,7 +2,6 @@
 {
   homebrew = {
     brews = [
-      "awscli"
       "cocoapods"
       "docker"
       "docker-completion"

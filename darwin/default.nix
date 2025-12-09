@@ -50,7 +50,6 @@
       plistwatch
       texliveTeTeX
       tetex
-      uv # Hyper speed Python manager
       sops
       wireshark
       wget
