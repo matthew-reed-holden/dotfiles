@@ -59,8 +59,8 @@ in
         builtins.readFile ./_mixins/configs/sketchybar-config.sketchybar;
     };
 
-    activation.installSketchyBarconfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      '';
+    # activation.installSketchyBarconfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    #   '';
 
     preferXdgDirectories = true;
 
