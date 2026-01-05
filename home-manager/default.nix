@@ -15,7 +15,7 @@ in
 {
   imports = [
     inputs.catppuccin.homeModules.catppuccin
-    inputs.nix-index-database.hmModules.nix-index
+    inputs.nix-index-database.rchmModules.nix-index
   ];
 
   xdg.enable = true;
@@ -55,7 +55,12 @@ in
         builtins.readFile ./_mixins/configs/yazi-keymap.toml;
       "${config.xdg.configHome}/ghostty/config".text = builtins.readFile ./_mixins/configs/ghostty-config;
       ".hidden".text = ''snap'';
+      "${config.xdg.configHome}/sketchybar/sketchybarrc".text =
+        builtins.readFile ./_mixins/configs/sketchybar-config.sketchybar;
     };
+
+    activation.installSketchyBarconfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      '';
 
     preferXdgDirectories = true;
 
@@ -85,6 +90,7 @@ in
       VISUAL = "nvim";
     };
   };
+
 
   fonts.fontconfig.enable = true;
 
