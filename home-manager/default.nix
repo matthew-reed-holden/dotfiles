@@ -15,7 +15,7 @@ in
 {
   imports = [
     inputs.catppuccin.homeModules.catppuccin
-    inputs.nix-index-database.rchmModules.nix-index
+    inputs.nix-index-database.hmModules.nix-index
   ];
 
   xdg.enable = true;
@@ -56,7 +56,7 @@ in
       "${config.xdg.configHome}/ghostty/config".text = builtins.readFile ./_mixins/configs/ghostty-config;
       ".hidden".text = ''snap'';
       "${config.xdg.configHome}/sketchybar/sketchybarrc".text =
-        builtins.readFile ./_mixins/configs/sketchybar-config.sketchybar;
+        builtins.readFile ./_mixins/configs/sketchybar-config.sketchybarrc;
     };
 
     # activation.installSketchyBarconfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
