@@ -2,6 +2,7 @@ _: {
   imports = [
     ./ai
     ./browsers
+    ./aws
     ./cmd_center
     ./dbs
     ./dev

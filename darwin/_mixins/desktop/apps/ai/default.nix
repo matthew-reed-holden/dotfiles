@@ -3,6 +3,7 @@ _: {
     casks = [
       "chatgpt"
       "claude"
+      "claude-code"
       "lm-studio"
       "ollama"
     ];
