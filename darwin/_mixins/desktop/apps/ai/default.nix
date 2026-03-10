@@ -9,6 +9,7 @@ _: {
     ];
 
     brews = [
+      "copilot"
       "stockfish"
     ];
 
