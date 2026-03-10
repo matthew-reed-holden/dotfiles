@@ -57,9 +57,8 @@ in
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      cleanup = "zap";
     };
-
+    
   };
 
   # Ensure `brew update` runs before `brew bundle` during activation.
@@ -83,6 +82,10 @@ in
     autoMigrate = true;
     user = "${username}";
     mutableTaps = true;
+    taps = {
+      "homebrew/homebrew-core" = inputs.homebrew-core;
+      "homebrew/homebrew-cask" = inputs.homebrew-cask;
+    };
   };
 
   determinateNix = {

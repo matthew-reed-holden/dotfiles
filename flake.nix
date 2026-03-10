@@ -35,6 +35,14 @@
     pwmenu.inputs.flake-utils.follows = "flake-utils";
 
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
     nixos-needsreboot.url = "https://flakehub.com/f/wimpysworld/nixos-needsreboot/0.2.5.tar.gz";
     nixos-needsreboot.inputs.nixpkgs.follows = "nixpkgs";
 
