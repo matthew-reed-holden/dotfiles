@@ -62,9 +62,24 @@ in
 
   };
 
+  # Ensure `brew update` runs before `brew bundle` during activation.
+  # nix-homebrew bootstraps the prefix but leaves the API cache empty;
+  # without an explicit update the very first `brew bundle` cannot
+  # resolve any formula names.
+  system.activationScripts.extraActivation.text = ''
+    if [ -f "${config.homebrew.brewPrefix}/brew" ]; then
+      echo >&2 "Running brew update before bundle..."
+      sudo \
+        --preserve-env=PATH \
+        --user=${lib.escapeShellArg config.noughty.user.name} \
+        --set-home \
+        ${config.homebrew.brewPrefix}/brew update --quiet || true
+    fi
+  '';
+
   nix-homebrew = {
     enable = true;
-    enableRosetta = if (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") then true else false;
+    enableRosetta = false;
     autoMigrate = true;
     user = "${username}";
     mutableTaps = true;
