@@ -5,10 +5,10 @@
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/*";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/master";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.11";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     # Shared transitive inputs; most flake-utils and blueprint depend on nix-systems/default.
     systems.url = "github:nix-systems/default";
@@ -64,10 +64,6 @@
 
     mac-app-util.url = "github:hraban/mac-app-util";
     mac-app-util.inputs.nixpkgs.follows = "nixpkgs";
-    mac-app-util.inputs.cl-nix-lite.inputs.nixpkgs.follows = "nixpkgs";
-    mac-app-util.inputs.cl-nix-lite.inputs.systems.follows = "systems";
-    mac-app-util.inputs.cl-nix-lite.inputs.flake-parts.follows = "flake-parts";
-    mac-app-util.inputs.cl-nix-lite.inputs.treefmt-nix.follows = "mac-app-util/treefmt-nix";
     # Do not follow root flake-utils here; mac-app-util needs darwin-only systems
     # from nix-systems/default-darwin, while our root flake-utils uses nix-systems/default.
     # Sharing flake-utils would make eachDefaultSystem include Linux, causing dockutil
@@ -82,6 +78,15 @@
     xdg-override.url = "github:koiuo/xdg-override";
     xdg-override.inputs.nixpkgs.follows = "nixpkgs";
     xdg-override.inputs.flake-parts.follows = "flake-parts";
+
+    llm-agents.url = "github:numtide/llm-agents.nix";
+    llm-agents.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    llm-agents.inputs.treefmt-nix.follows = "direnv-instant/treefmt-nix";
+
+    superpowers = {
+      url = "github:obra/superpowers";
+      flake = false;
+    };
 
   };
 
@@ -131,7 +136,14 @@
 
       formatter = builder.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
-      helper = import ./lib { inherit inputs outputs stateVersion; };
+      helper = import ./lib {
+        inherit
+          inputs
+          outputs
+          stateVersion
+          darwinStateVersion
+          ;
+      };
 
       devShells = builder.mkDevShells {
         overlays = self.overlays;

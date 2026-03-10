@@ -25,13 +25,9 @@ in
     inputs.nix-index-database.darwinModules.nix-index
     ./_mixins/desktop
     ./_mixins/features
-    ./_mixins/scripts
   ];
 
   environment = {
-    shells = [
-      pkgs.zsh
-    ];
     systemPackages = with pkgs; [
       ghostscript
       grpc
@@ -45,7 +41,6 @@ in
       luajit
       m-cli
       mas
-      nh
       mermaid-cli
       php
       plistwatch
@@ -97,6 +92,9 @@ in
         "@admin"
       ];
       warn-dirty = false;
+      # Numtide binary cache for llm-agents.nix pre-built packages
+      extra-substituters = [ "https://cache.numtide.com" ];
+      extra-trusted-public-keys = [ "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" ];
     };
   };
 

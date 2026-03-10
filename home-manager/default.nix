@@ -12,17 +12,20 @@
 let
   inherit (config.noughty) host;
   username = config.noughty.user.name;
+  isLinux = host.is.linux;
+  isDarwin = host.is.darwin;
 in
 {
   imports = [
     ../lib/noughty
+    ./_mixins/development
     inputs.catppuccin.homeModules.catppuccin
     inputs.mac-app-util.homeManagerModules.default
     inputs.nix-index-database.homeModules.nix-index
   ];
 
   catppuccin = {
-    inherit (catpuccinPalette) accent;
+    inherit (catppuccinPalette) accent;
     inherit (catppuccinPalette) flavor;
 
     alacritty.enable = config.programs.alacritty.enable;
@@ -34,6 +37,7 @@ in
     micro.enable = config.programs.micro.enable;
     starship.enable = config.programs.starship.enable;
     yazi.enable = config.programs.yazi.enable;
+    zsh-syntax-highlighting.enable = config.programs.zsh.enable;
   };
 
   xdg.enable = true;

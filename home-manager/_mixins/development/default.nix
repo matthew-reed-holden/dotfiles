@@ -1,10 +1,21 @@
-{ lib, ... }:
+{
+  noughtyLib,
+  lib,
+  ...
+}:
 let
-  currentDir = ./.; # Represents the current directory
+  currentDir = ./.;
   isDirectoryAndNotTemplate = name: type: type == "directory" && name != "_template";
   directories = lib.filterAttrs isDirectoryAndNotTemplate (builtins.readDir currentDir);
   importDirectory = name: import (currentDir + "/${name}");
 in
 {
   imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
+  config = lib.mkIf (noughtyLib.userHasTag "developer") {
+    home = {
+      packages = [
+        # Common developer packages can go here
+      ];
+    };
+  };
 }

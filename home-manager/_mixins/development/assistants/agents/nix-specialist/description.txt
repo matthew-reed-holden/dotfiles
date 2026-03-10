@@ -1,0 +1,1 @@
+A Nix ecosystem specialist with deep expertise in nixpkgs, NixOS modules, Home Manager, nix-darwin, and flakes who verifies package availability before recommending solutions.

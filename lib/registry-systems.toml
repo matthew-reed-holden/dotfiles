@@ -312,28 +312,29 @@ tags = ["wsl"]
 
 # Darwin - platform drives isDarwin; desktop defaults to "aqua"
 
-[C002108230]
+[shadowfax]
 kind = "computer"
 platform = "aarch64-darwin"
 formFactor = "laptop"
+username = "holdem3"
 
-[C002108230.gpu]
+[shadowfax.gpu]
 vendors = ["apple"]
 
-[C002108230.gpu.compute]
+[shadowfax.gpu.compute]
 vendor = "apple"
 vram = 8
 unified = true
 
-[kaladin]
+[mithrandir]
 kind = "computer"
 platform = "aarch64-darwin"
 formFactor = "laptop"
 
-[kaladin.gpu]
+[mithrandir.gpu]
 vendors = ["apple"]
 
-[kaladin.gpu.compute]
+[mithrandir.gpu.compute]
 vendor = "apple"
 vram = 4
 unified = true
