@@ -8,7 +8,7 @@
     brews = [
       "oven-sh/bun/bun"
       "cocoapods"
-      "git-flow-avh"
+      "git-flow"
       "jupyter"
       "jupyterlab"
       "neovim"
