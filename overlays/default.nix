@@ -2,12 +2,59 @@
 { inputs, ... }:
 {
   # This one brings our custom packages from the 'pkgs' directory
-  additions = final: _prev: import ../pkgs final.pkgs;
+  localPackages = final: _prev: import ../pkgs final.pkgs;
 
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
-  modifications = _final: prev: {
+  modifiedPackages = final: prev: {
+    # Override Python packages to fix Darwin-specific issues
+    python3 = prev.python3.override {
+      packageOverrides = _pyfinal: pyprev: {
+        # Fix setproctitle test failures on Darwin with multiprocessing fork
+        # See: https://github.com/NixOS/nixpkgs/issues/479313
+        setproctitle = pyprev.setproctitle.overridePythonAttrs (old: {
+          disabledTests =
+            (old.disabledTests or [ ])
+            ++ prev.lib.optionals prev.stdenv.isDarwin [
+              "test_fork_segfault"
+              "test_thread_fork_segfault"
+            ];
+        });
+      };
+    };
+
+    python313 = prev.python313.override {
+      packageOverrides = _pyfinal: pyprev: {
+        # Fix setproctitle test failures on Darwin with multiprocessing fork
+        # See: https://github.com/NixOS/nixpkgs/issues/479313
+        setproctitle = pyprev.setproctitle.overridePythonAttrs (old: {
+          disabledTests =
+            (old.disabledTests or [ ])
+            ++ prev.lib.optionals prev.stdenv.isDarwin [
+              "test_fork_segfault"
+              "test_thread_fork_segfault"
+            ];
+        });
+      };
+    };
+
+    # Fix inetutils build failure on Darwin with clang 21
+    # gnulib's error() macro passes dgettext() results as format strings,
+    # triggering -Werror,-Wformat-security in openat-die.c
+    # See: https://github.com/NixOS/nixpkgs/issues/488689
+    inetutils = prev.inetutils.overrideAttrs (
+      old:
+      prev.lib.optionalAttrs prev.stdenv.isDarwin {
+        env = (old.env or { }) // {
+          NIX_CFLAGS_COMPILE = toString [
+            (old.env.NIX_CFLAGS_COMPILE or "")
+            "-Wno-format-security"
+          ];
+        };
+      }
+    );
+
     # Override avizo to use a specific commit that includes these fixes:
     # - https://github.com/heyjuvi/avizo/pull/76 (fix options of lightctl)
     # - https://github.com/heyjuvi/avizo/pull/73 (chore: fix size of dark theme icons)
@@ -22,81 +69,42 @@
       };
     });
 
-    bemoji = prev.bemoji.overrideAttrs (_old: rec {
-      postPatch = ''
-        sed -i 's/🔍/"󰞅 "/g' bemoji
-        sed -i 's/fuzzel -d/fuzzel -d -w 48/' bemoji
-      '';
-    });
+    linuxPackages_6_12 = prev.linuxPackages_6_12.extend (
+      _lpself: lpsuper: {
+        mwprocapture = lpsuper.mwprocapture.overrideAttrs (_old: rec {
+          pname = "mwprocapture";
+          subVersion = "4420";
+          version = "1.3.${subVersion}";
+          src = prev.fetchurl {
+            url = "http://www.magewell.com/files/support/ProCaptureForLinux_${version}.tar.gz";
+            sha256 = "sha256-aX8vhousQQ48QPgfLjESGbBw26egDB46AmSkruUaM5g=";
+          };
+        });
+      }
+    );
 
-    custom-caddy = import ./custom-caddy.nix { pkgs = prev; };
+    linuxPackages = prev.linuxPackages.extend (
+      _lpself: lpsuper: {
+        mwprocapture = lpsuper.mwprocapture.overrideAttrs (_old: rec {
+          pname = "mwprocapture";
+          subVersion = "4490";
+          version = "1.3.${subVersion}";
+          src = prev.fetchurl {
+            url = "https://www.magewell.com/files/drivers/ProCaptureForLinuxPUBLIC_${version}.tar.gz";
+            sha256 = "sha256-W/HqTQsJKnIUMC13bFuwdMiNABftmKv0qLSFU3bCFAc=";
+          };
+        });
+      }
+    );
 
-    gitkraken = prev.gitkraken.overrideAttrs (old: rec {
-      version = "10.7.0";
+  };
 
-      src = {
-        x86_64-linux = prev.fetchzip {
-          url = "https://release.axocdn.com/linux/GitKraken-v${version}.tar.gz";
-          hash = "sha256-fNx3mZnoMkEd1RlvcEmnncX0cLJhRjbf2t4CfB5eRl4=";
-        };
-
-        x86_64-darwin = prev.fetchzip {
-          url = "https://release.axocdn.com/darwin/GitKraken-v${version}.zip";
-          hash = "sha256-FLNzB1MvW943DDBs5EmxOWx31CMm2KWXrXp6EjfkPeQ=";
-        };
-
-        aarch64-darwin = prev.fetchzip {
-          url = "https://release.axocdn.com/darwin-arm64/GitKraken-v${version}.zip";
-          hash = "sha256-+uEpm9A9zkTMWL2XccWFTkuhFdZMJUZHSD3FinNsRyA=";
-        };
-      }.${prev.stdenv.hostPlatform.system} or (throw "Unsupported system: ${prev.stdenv.hostPlatform.system}");
-    });
-
-    linuxPackages_6_12 = prev.linuxPackages_6_12.extend (_lpself: lpsuper: {
-      mwprocapture = lpsuper.mwprocapture.overrideAttrs ( old: rec {
-        pname = "mwprocapture";
-        subVersion = "4407";
-        version = "1.3.0.${subVersion}";
-        src = prev.fetchurl {
-          url = "https://www.magewell.com/files/drivers/ProCaptureForLinux_${subVersion}.tar.gz";
-          sha256 = "sha256-wzOwnaxaD4Cm/cdc/sXHEzYZoN6b/kivDPvXRsC+Aig=";
-        };
-        postPatch = let
-          kernelVersion = lpsuper.kernel.version;
-          needsPatch = prev.lib.versionAtLeast kernelVersion "6.12";
-        in ''
-          ${old.postPatch or ""}
-          ${if needsPatch then ''
-            sed -i 's/no_llseek/noop_llseek/' src/sources/avstream/mw-event-dev.c
-          '' else ""}
-        '';
-      });
-    });
-
-    resources = prev.resources.overrideAttrs (_old: rec {
-      pname = "resources";
-      version = "1.7.1";
-      src = prev.fetchFromGitHub {
-        owner = "nokyan";
-        repo = "resources";
-        rev = "refs/tags/v${version}";
-        hash = "sha256-SHawaH09+mDovFiznZ+ZkUgUbv5tQGcXBgUGrdetOcA=";
-      };
-
-      cargoDeps = prev.rustPlatform.fetchCargoTarball {
-        inherit src;
-        name = "resources-${version}";
-        hash = "sha256-tUD+gx9nQiGWKKRPcR7OHbPvU2j1dQjYck7FF9vYqSQ=";
-      };
-    });
-
-    wavebox = prev.wavebox.overrideAttrs (_old: rec {
-      pname = "wavebox";
-      version = "10.133.4-2";
-      src = prev.fetchurl {
-        url = "https://download.wavebox.app/stable/linux/deb/amd64/wavebox_${version}_amd64.deb";
-        sha256 = "sha256-E7Hvz8HrWLTs7H6wPVN89PVTPWL0T+DjpnIGS17xw2s=";
-      };
-    });
+  # When applied, the unstable nixpkgs set (declared in the flake inputs) will
+  # be accessible through 'pkgs.unstable'
+  unstablePackages = final: _prev: {
+    unstable = import inputs.nixpkgs-unstable {
+      inherit (final.stdenv.hostPlatform) system;
+      config.allowUnfree = true;
+    };
   };
 }

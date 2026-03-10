@@ -1,0 +1,456 @@
+{
+  darwinStateVersion,
+  inputs,
+  outputs,
+  stateVersion,
+  users ? { },
+  ...
+}:
+let
+  inherit (inputs.nixpkgs) lib;
+
+  # Resolve a registry entry by merging four layers (later wins):
+  # 1. baseline username
+  # 2. kind + OS derived desktop
+  # 3. iso implicit defaults
+  # 4. explicit entry values
+  resolveEntry =
+    name: entry:
+    let
+      isDarwin = lib.hasSuffix "-darwin" entry.platform;
+
+      kDefaults = {
+        desktop =
+          {
+            computer = if isDarwin then "aqua" else "hyprland";
+            server = null;
+            vm = null;
+            container = null;
+          }
+          .${entry.kind};
+      };
+
+      isoDefaults = lib.optionalAttrs (lib.elem "iso" (entry.tags or [ ])) {
+        desktop = null;
+        username = "nixos";
+      };
+
+      merged = {
+        username = "matthewholden";
+      }
+      // kDefaults
+      // isoDefaults
+      // entry
+      // {
+        inherit name;
+      };
+
+      # Look up user-level metadata from the users table.
+      userEntry = users.${merged.username} or { };
+    in
+    merged // { inherit userEntry; };
+
+  # Predicate functions for filtering registry entries
+  isLinuxEntry = e: lib.hasSuffix "-linux" e.platform;
+  isDarwinEntry = e: lib.hasSuffix "-darwin" e.platform;
+  isISOEntry = e: lib.elem "iso" (e.tags or [ ]);
+  isHomeOnlyEntry =
+    e:
+    let
+      tags = e.tags or [ ];
+    in
+    builtins.elem "wsl" tags || builtins.elem "lima" tags || builtins.elem "steamdeck" tags;
+
+  # Single source of truth for nixpkgs instantiation.
+  mkPkgs =
+    { system, overlays }:
+    import inputs.nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+      overlays = builtins.attrValues overlays;
+    };
+in
+rec {
+  # Export predicate functions for use in flake.nix
+  inherit
+    isLinuxEntry
+    isDarwinEntry
+    isISOEntry
+    isHomeOnlyEntry
+    ;
+
+  # Generate Catppuccin palette with helper functions
+  # This reads the palette JSON and provides convenient colour access functions.
+  # The palette data is inlined from lib/catppuccin-palette.json to avoid IFD
+  # (Import From Derivation) which would block evaluation for every host.
+  mkCatppuccinPalette =
+    {
+      flavor ? "mocha",
+      accent ? "blue",
+      system ? "x86_64-linux",
+    }:
+    let
+      paletteJson = builtins.fromJSON (builtins.readFile ./catppuccin-palette.json);
+      palette = paletteJson.${flavor}.colors;
+
+      # Helper functions for palette access
+      getColor = colorName: palette.${colorName}.hex;
+      getRGB = colorName: palette.${colorName}.rgb;
+      getHSL = colorName: palette.${colorName}.hsl;
+
+      # Hyprland-specific helper that removes # from hex colors
+      getHyprlandColor = colorName: builtins.substring 1 (-1) palette.${colorName}.hex;
+
+      # CSS rgba() helper for use in GTK CSS, avizo, wlogout, etc.
+      mkRgba =
+        colorName: alpha:
+        let
+          inherit (palette.${colorName}) rgb;
+        in
+        "rgba(${toString rgb.r}, ${toString rgb.g}, ${toString rgb.b}, ${alpha})";
+
+      # Determine if this is a dark theme
+      isDark = flavor != "latte";
+      isDarkAsIntString = if isDark then "1" else "0";
+      themeShade = if isDark then "-Dark" else "-Light";
+      preferShade = if isDark then "prefer-dark" else "prefer-light";
+
+      # VT colour mapping (16 ANSI colours: 0-15)
+      # Standard ANSI colours followed by bright variants
+      # Note: Index 0 is used as default background, so it must be "base"
+      vtColorMap = [
+        "base" # 0: black (also used as default background)
+        "red" # 1: red
+        "green" # 2: green
+        "yellow" # 3: yellow
+        "blue" # 4: blue
+        "pink" # 5: magenta
+        "teal" # 6: cyan
+        "subtext0" # 7: light grey
+        "surface1" # 8: dark grey (bright black)
+        "red" # 9: bright red
+        "green" # 10: bright green
+        "yellow" # 11: bright yellow
+        "blue" # 12: bright blue
+        "pink" # 13: bright magenta
+        "teal" # 14: bright cyan
+        "text" # 15: white
+      ];
+    in
+    {
+      inherit
+        getColor
+        getRGB
+        getHSL
+        getHyprlandColor
+        mkRgba
+        isDark
+        isDarkAsIntString
+        themeShade
+        preferShade
+        vtColorMap
+        ;
+      colors = palette;
+      inherit accent;
+      inherit flavor;
+    };
+
+  # Helper function for generating home-manager configs
+  mkHome =
+    {
+      hostname,
+      username ? "matthewholden",
+      desktop ? null,
+      platform ? "x86_64-linux",
+      hostKind ? "computer",
+      hostFormFactor ? null,
+      hostGpuVendors ? [ ],
+      hostGpuCompute ? { },
+      hostTags ? [ ],
+      hostDisplays ? [ ],
+      hostKeyboardLayout ? "gb",
+      hostKeyboardVariant ? "",
+      userTags ? [ ],
+    }:
+    let
+      # Generate the Catppuccin palette for this system
+      catppuccinPalette = mkCatppuccinPalette { system = platform; };
+    in
+    inputs.home-manager.lib.homeManagerConfiguration {
+      pkgs = inputs.nixpkgs.legacyPackages.${platform};
+      extraSpecialArgs = {
+        inherit
+          inputs
+          outputs
+          stateVersion
+          catppuccinPalette
+          ;
+      };
+      modules = [
+        ../home-manager
+        {
+          noughty.host = {
+            name = hostname;
+            kind = hostKind;
+            inherit platform;
+            formFactor = hostFormFactor;
+            gpu = {
+              vendors = hostGpuVendors;
+              compute = hostGpuCompute;
+            };
+            tags = hostTags;
+            displays = hostDisplays;
+            keyboard = {
+              layout = hostKeyboardLayout;
+              variant = hostKeyboardVariant;
+            };
+            inherit desktop;
+          };
+          noughty.user.name = username;
+          noughty.user.tags = userTags;
+        }
+      ];
+    };
+
+  # Helper function for generating NixOS configs
+  mkNixos =
+    {
+      hostname,
+      username ? "matthewholden",
+      desktop ? null,
+      platform ? "x86_64-linux",
+      hostKind ? "computer",
+      hostFormFactor ? null,
+      hostGpuVendors ? [ ],
+      hostGpuCompute ? { },
+      hostTags ? [ ],
+      hostDisplays ? [ ],
+      hostKeyboardLayout ? "gb",
+      hostKeyboardVariant ? "",
+      userTags ? [ ],
+    }:
+    let
+      # Generate the Catppuccin palette for this system
+      catppuccinPalette = mkCatppuccinPalette { system = platform; };
+    in
+    inputs.nixpkgs.lib.nixosSystem {
+      system = platform;
+      specialArgs = {
+        inherit
+          inputs
+          outputs
+          stateVersion
+          catppuccinPalette
+          ;
+      };
+      # Include the ISO installer module when the "iso" tag is present.
+      modules =
+        let
+          cd-dvd = inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix";
+        in
+        [
+          ../nixos
+          ../nixos/${hostname}
+          {
+            noughty.host = {
+              name = hostname;
+              kind = hostKind;
+              inherit platform;
+              formFactor = hostFormFactor;
+              gpu = {
+                vendors = hostGpuVendors;
+                compute = hostGpuCompute;
+              };
+              tags = hostTags;
+              displays = hostDisplays;
+              keyboard = {
+                layout = hostKeyboardLayout;
+                variant = hostKeyboardVariant;
+              };
+              inherit desktop;
+            };
+            noughty.user.name = username;
+            noughty.user.tags = userTags;
+          }
+        ]
+        ++ inputs.nixpkgs.lib.optionals (lib.elem "iso" hostTags) [ cd-dvd ];
+    };
+
+  mkDarwin =
+    {
+      desktop ? "aqua",
+      hostname,
+      username ? "matthewholden",
+      platform ? "aarch64-darwin",
+      hostKind ? "computer",
+      hostFormFactor ? null,
+      hostGpuVendors ? [ ],
+      hostGpuCompute ? { },
+      hostTags ? [ ],
+      hostDisplays ? [ ],
+      hostKeyboardLayout ? "gb",
+      hostKeyboardVariant ? "",
+      userTags ? [ ],
+    }:
+    let
+      # Generate the Catppuccin palette for this system
+      catppuccinPalette = mkCatppuccinPalette { system = platform; };
+      # nix-darwin uses an integer stateVersion (e.g. 5), not a string like NixOS
+      stateVersion = darwinStateVersion;
+    in
+    inputs.nix-darwin.lib.darwinSystem {
+      system = platform;
+      specialArgs = {
+        inherit
+          inputs
+          outputs
+          stateVersion
+          catppuccinPalette
+          ;
+      };
+      modules = [
+        ../darwin
+        ../darwin/${hostname}
+        {
+          noughty.host = {
+            name = hostname;
+            kind = hostKind;
+            inherit platform;
+            formFactor = hostFormFactor;
+            gpu = {
+              vendors = hostGpuVendors;
+              compute = hostGpuCompute;
+            };
+            tags = hostTags;
+            displays = hostDisplays;
+            keyboard = {
+              layout = hostKeyboardLayout;
+              variant = hostKeyboardVariant;
+            };
+            inherit desktop;
+          };
+          noughty.user.name = username;
+          noughty.user.tags = userTags;
+        }
+      ];
+    };
+
+  forAllSystems = inputs.nixpkgs.lib.genAttrs [
+    "aarch64-linux"
+    "x86_64-linux"
+    "aarch64-darwin"
+  ];
+
+  # Resolve a registry entry and produce the helperConfig attrset
+  # that mkNixos/mkHome/mkDarwin expect.
+  mkSystemConfig =
+    name: entry:
+    let
+      resolved = resolveEntry name entry;
+    in
+    {
+      hostname = name;
+      inherit (resolved) username;
+      desktop = resolved.desktop or null;
+      inherit (resolved) platform;
+      hostKind = resolved.kind;
+      hostFormFactor = resolved.formFactor or null;
+      hostGpuVendors = (resolved.gpu or { }).vendors or [ ];
+      hostGpuCompute = (resolved.gpu or { }).compute or { };
+      hostTags = resolved.tags or [ ];
+      hostDisplays = resolved.displays or [ ];
+      hostKeyboardLayout = (resolved.keyboard or { }).layout or "gb";
+      hostKeyboardVariant = (resolved.keyboard or { }).variant or "";
+      userTags = (resolved.userEntry or { }).tags or [ ];
+    };
+
+  # Generate configurations by filtering with a predicate function
+  generateConfigs =
+    predicate: systems:
+    let
+      filteredSystems = lib.filterAttrs (_name: entry: predicate entry) systems;
+    in
+    lib.mapAttrs (name: entry: mkSystemConfig name entry) filteredSystems;
+
+  # Generate all NixOS configurations from the registry.
+  # Includes regular Linux hosts and ISO entries; excludes home-only entries.
+  mkAllNixos =
+    systems:
+    lib.mapAttrs (_name: config: mkNixos config) (
+      generateConfigs (e: isLinuxEntry e && !isHomeOnlyEntry e) systems
+    );
+
+  # Generate all nix-darwin configurations from the registry.
+  mkAllDarwin =
+    systems: lib.mapAttrs (_name: config: mkDarwin config) (generateConfigs isDarwinEntry systems);
+
+  # Generate all Home Manager configurations from the registry.
+  # Produces "username@hostname" keys; excludes ISO entries.
+  mkAllHomes =
+    systems:
+    lib.mapAttrs' (
+      _name: config: lib.nameValuePair "${config.username}@${config.hostname}" (mkHome config)
+    ) (generateConfigs (e: !isISOEntry e) systems);
+
+  # Build the packages output for all systems.
+  # Imports local packages, filters by meta.platforms, and merges
+  # Linux-only re-exports from the given flake inputs.
+  mkPackages =
+    {
+      overlays,
+      localPackagesPath,
+      linuxOnlyFlakeInputs ? { },
+    }:
+    forAllSystems (
+      system:
+      let
+        pkgs = mkPkgs { inherit system overlays; };
+
+        # Filter local packages by meta.platforms so that packages which
+        # cannot build on the current system are excluded from the output.
+        filterLocalPackages =
+          localPkgs:
+          lib.filterAttrs (
+            _name: pkg:
+            let
+              platforms = pkg.meta.platforms or [ ];
+            in
+            platforms == [ ] || builtins.elem system platforms
+          ) localPkgs;
+
+        # Re-export packages from flake inputs restricted to Linux systems;
+        # some flake inputs provide Darwin outputs that fail to compile.
+        linuxOnlyPkgs = lib.concatMapAttrs (
+          name: flakeInput:
+          lib.optionalAttrs (lib.hasSuffix "linux" system && flakeInput.packages ? ${system}) {
+            ${name} = flakeInput.packages.${system}.default;
+          }
+        ) linuxOnlyFlakeInputs;
+      in
+      filterLocalPackages (import localPackagesPath pkgs) // linuxOnlyPkgs
+    );
+
+  # Build the devShells output for all systems.
+  # Accepts a package list function and optional flake inputs whose
+  # default packages are included when available on the current system.
+  mkDevShells =
+    {
+      overlays,
+      shellPackages,
+      extraFlakeInputs ? [ ],
+    }:
+    forAllSystems (
+      system:
+      let
+        pkgs = mkPkgs { inherit system overlays; };
+        extraPkgs = lib.concatMap (
+          flakeInput: lib.optional (flakeInput.packages ? ${system}) flakeInput.packages.${system}.default
+        ) extraFlakeInputs;
+      in
+      {
+        default = pkgs.mkShell {
+          packages = shellPackages pkgs ++ extraPkgs;
+        };
+      }
+    );
+}

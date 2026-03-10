@@ -1,29 +1,30 @@
 {
+  catppuccinPalette,
   config,
   inputs,
-  isWorkstation,
   lib,
+  noughtyLib,
   outputs,
   pkgs,
   stateVersion,
-  username,
   ...
 }:
 let
-  inherit (pkgs.stdenv) isDarwin isLinux;
+  inherit (config.noughty) host;
+  username = config.noughty.user.name;
 in
 {
   imports = [
+    ../lib/noughty
     inputs.catppuccin.homeModules.catppuccin
+    inputs.mac-app-util.homeManagerModules.default
     inputs.nix-index-database.homeModules.nix-index
   ];
 
-  xdg.enable = true;
-  xdg.configHome = "/Users/${username}/.config";
-
   catppuccin = {
-    accent = "blue";
-    flavor = "mocha";
+    inherit (catpuccinPalette) accent;
+    inherit (catppuccinPalette) flavor;
+
     alacritty.enable = config.programs.alacritty.enable;
     bat.enable = config.programs.bat.enable;
     fish.enable = config.programs.fish.enable;
@@ -35,15 +36,21 @@ in
     yazi.enable = config.programs.yazi.enable;
   };
 
+  xdg.enable = true;
+  xdg.configHome = "/Users/${username}/.config";
 
   home = {
     inherit stateVersion;
-    inherit username;
+    username = config.noughty.user.name;
+    homeDirectory =
+      if host.is.darwin then
+        "/Users/${username}"
+      else if noughtyLib.hostHasTag "lima" then
+        "/home/${username}.linux"
+      else
+        "/home/${username}";
 
     enableNixpkgsReleaseCheck = true;
-
-    homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
-    
 
     file = {
       "${config.xdg.configHome}/fastfetch/config.jsonc".text =
@@ -54,7 +61,7 @@ in
       "${config.xdg.configHome}/yazi/keymap.toml".text =
         builtins.readFile ./_mixins/configs/yazi-keymap.toml;
       "${config.xdg.configHome}/ghostty/config".text = builtins.readFile ./_mixins/configs/ghostty-config;
-      ".hidden".text = ''snap'';
+      ".hidden".text = "snap";
       "${config.xdg.configHome}/sketchybar/sketchybarrc".text =
         builtins.readFile ./_mixins/configs/sketchybarrc;
     };
@@ -67,6 +74,12 @@ in
     packages =
       with pkgs;
       [
+        nerd-fonts.fira-code
+        font-awesome
+        noto-fonts-color-emoji
+        noto-fonts-monochrome-emoji
+        symbola
+        work-sans
         cpufetch # Terminal CPU info
         fastfetch # Modern Unix system info
         ipfetch # Terminal IP info
@@ -85,35 +98,56 @@ in
         coreutils
       ];
     sessionVariables = {
+      COLORTERM = "truecolor";
       EDITOR = "nvim";
       SYSTEMD_EDITOR = "nvim";
       VISUAL = "nvim";
     };
   };
 
-
-  fonts.fontconfig.enable = true;
+  fonts = {
+    fontconfig = {
+      enable = true;
+      defaultFonts = {
+        serif = [
+          "Source Serif"
+          "Noto Color Emoji"
+        ];
+        sansSerif = [
+          "Work Sans"
+          "Noto Color Emoji"
+        ];
+        monospace = [
+          "FiraCode Nerd Font Mono"
+          "Font Awesome 6 Free"
+          "Font Awesome 6 Brands"
+          "Symbola"
+          "Noto Emoji"
+        ];
+        emoji = [
+          "Noto Color Emoji"
+        ];
+      };
+    };
+  };
 
   # Workaround home-manager bug
   # - https://github.com/nix-community/home-manager/issues/2033
   news = {
     display = "silent";
-    entries = lib.mkForce [ ];
   };
 
   nixpkgs = {
     overlays = [
-      # Add overlays your own flake exports (from overlays and pkgs dir):
-      outputs.overlays.additions
-      outputs.overlays.modifications
+      # Overlays defined via overlays/default.nix and pkgs/default.nix
+      outputs.overlays.localPackages
+      outputs.overlays.modifiedPackages
+      outputs.overlays.unstablePackages
     ];
+    # Configure your nixpkgs instance
     config = {
       allowUnfree = true;
     };
-  };
-
-  nix = {
-    package = pkgs.nixVersions.latest;
   };
 
   programs = {
@@ -282,7 +316,6 @@ in
       enable = true;
     };
 
-
     zsh = {
       autocd = true;
       autosuggestion = {
@@ -372,9 +405,9 @@ in
 
       '';
       # Commands that should be added to top of .zshrc.
-      initExtraFirst = '''';
+      initExtraFirst = "";
       # Extra commands that should be added to .zlogin.
-      loginExtra = '''';
+      loginExtra = "";
       # Environment variables that will be set for zsh session.
       sessionVariables = {
 
@@ -387,15 +420,11 @@ in
         enable = true;
       };
 
-
       zsh-abbr = {
         enable = true;
         abbreviations = { };
       };
     };
-  };
-
-  services = {
   };
 
 }

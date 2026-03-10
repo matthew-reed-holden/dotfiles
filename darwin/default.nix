@@ -1,36 +1,38 @@
 {
   config,
-  hostname,
   inputs,
   lib,
-  outputs,
   pkgs,
-  platform,
-  username,
+  stateVersion,
   ...
 }:
+let
+  inherit (config.noughty) host;
+  username = config.noughty.user.name;
+  # Derive Apple locale strings from the keyboard locale.
+  # "en_GB.UTF-8" -> "en_GB" (strip encoding suffix)
+  # "en_GB" -> "en-GB" (Apple language tag uses hyphens)
+  appleLocale = lib.head (lib.splitString "." host.keyboard.locale);
+  appleLanguage = builtins.replaceStrings [ "_" ] [ "-" ] appleLocale;
+in
 {
   imports = [
+    ../common
+    ../lib/noughty
+    inputs.determinate.darwinModules.default
+    inputs.mac-app-util.darwinModules.default
     inputs.nix-homebrew.darwinModules.nix-homebrew
     inputs.nix-index-database.darwinModules.nix-index
-    ./${hostname}
     ./_mixins/desktop
     ./_mixins/features
     ./_mixins/scripts
   ];
-
-  # Only install the docs I use
-  documentation.enable = true;
-  documentation.doc.enable = false;
-  documentation.info.enable = false;
-  documentation.man.enable = true;
 
   environment = {
     shells = [
       pkgs.zsh
     ];
     systemPackages = with pkgs; [
-      git
       ghostscript
       grpc
       grpcui
@@ -43,20 +45,14 @@
       luajit
       m-cli
       mas
+      nh
       mermaid-cli
-      nix-output-monitor
-      nvd
       php
       plistwatch
-      sops
-      wireshark
-      wget
     ];
 
     variables = {
-      EDITOR = "nvim";
-      SYSTEMD_EDITOR = "nvim";
-      VISUAL = "nvim";
+      SHELL = "${pkgs.zsh}/bin/zsh";
     };
   };
 
@@ -73,53 +69,48 @@
 
   nix-homebrew = {
     enable = true;
-    enableRosetta = platform == "aarch64-darwin";
+    enableRosetta = if (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") then true else false;
     autoMigrate = true;
     user = "${username}";
     mutableTaps = true;
   };
 
-  nixpkgs = {
-    # Configure your nixpkgs instance
-    config.allowUnfree = true;
-    hostPlatform = lib.mkDefault "${platform}";
-    overlays = [
-      outputs.overlays.additions
-      outputs.overlays.modifications
-    ];
+  determinateNix = {
+    enable = true;
+    customSettings = {
+      experimental-features = "nix-command flakes";
+      extra-experimental-features = "parallel-eval";
+      # Disable global registry
+      flake-registry = "";
+      lazy-trees = true;
+      eval-cores = 0; # Enable parallel evaluation across all cores
+      # Workaround for NixOS/nix#1254; avoids HTTP/2 framing errors from CDN servers
+      http2 = false;
+      # Increase download parallelism for faster substitution
+      max-substitution-jobs = 64;
+      http-connections = 128;
+      connect-timeout = 10;
+      # Allow wheel users to set client-side Nix options (e.g. netrc-file
+      # for FlakeHub Cache authentication via fh apply).
+      trusted-users = [
+        "root"
+        "@admin"
+      ];
+      warn-dirty = false;
+    };
   };
 
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = "flakes nix-command";
-        # Disable global registry
-        flake-registry = "";
-        # Workaround for https://github.com/NixOS/nix/issues/9574
-        nix-path = config.nix.nixPath;
-        trusted-users = [
-          "root"
-          "${username}"
-        ];
-        warn-dirty = false;
-      };
-      enable = false;
-      # Disable channels
-      channel.enable = false;
-      # Make flake registry and nix path match flake inputs
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-    };
-
-  networking.hostName = hostname;
-  networking.computerName = hostname;
+  # Prevent audio stutter and UI jank during builds.
+  # The daemon's scheduling policy propagates to all build processes.
+  nix.daemonProcessType = "Background";
+  nix.daemonIOLowPriority = true;
 
   programs = {
     info.enable = false;
-    nix-index-database.comma.enable = true;
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
     zsh = {
       enable = true;
     };
@@ -128,23 +119,9 @@
   # Enable TouchID for sudo authentication
   security.pam.services.sudo_local.touchIdAuth = true;
 
-  services = {
-  };
-
   system = {
     primaryUser = "${username}";
-
-    stateVersion = 6;
-    # activationScripts run every time you boot the system or execute `darwin-rebuild`
-    activationScripts = {
-      nixos-needsreboot = {
-        supportsDryActivation = true;
-        text = "${
-          lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default
-        } \"$systemConfig\" || true";
-      };
-
-    };
+    inherit stateVersion;
 
     defaults = {
       CustomUserPreferences = {
@@ -197,7 +174,12 @@
             pressecretary = true;
           };
         };
+        NSGlobalDomain = {
+          AppleLanguages = [ appleLanguage ];
+          AppleLocale = appleLocale;
+        };
       };
+
       dock = {
         orientation = "left";
         mru-spaces = false;
@@ -257,7 +239,7 @@
         askForPasswordDelay = 300;
       };
 
-      smb.NetBIOSName = hostname;
+      smb.NetBIOSName = host.name;
 
       SoftwareUpdate = {
         AutomaticallyInstallMacOSUpdates = false;
