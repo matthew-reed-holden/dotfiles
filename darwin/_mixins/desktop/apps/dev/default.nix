@@ -2,7 +2,6 @@
 {
   homebrew = {
     taps = [
-      "anomalyco/tap"
       "oven-sh/bun"
     ];
 
@@ -14,7 +13,6 @@
       "jupyterlab"
       "neovim"
       "mono-libgdiplus"
-      "opencode"
       "pre-commit"
     ];
 

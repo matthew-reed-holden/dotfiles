@@ -1,8 +1,10 @@
 # Custom packages, that can be defined similarly to ones from nixpkgs
 # You can build them using 'nix build .#example'
 pkgs: {
-  # Local packages being prepped for upstreaming
-  nerd-font-patcher = pkgs.callPackage ./nerd-font-patcher { };
+  # Local packages
+  opencode-desktop = pkgs.callPackage ./opencode-desktop { };
+
+  # Local package overrides
 
   # Local fonts
   # - https://yildiz.dev/posts/packing-custom-fonts-for-nixos/
