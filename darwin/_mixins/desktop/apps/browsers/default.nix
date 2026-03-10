@@ -2,9 +2,10 @@
 _: {
   homebrew = {
     casks = [
-      "google-chrome"
       "firefox"
       "firefox@developer-edition"
+      "google-chrome"
+      "thebrowsercompany-dia"
     ];
 
   };
