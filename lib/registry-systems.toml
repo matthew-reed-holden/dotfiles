@@ -9,7 +9,7 @@
 #   platform   - required: "x86_64-linux", "aarch64-darwin", etc.
 #   formFactor - optional: "laptop", "desktop", "handheld", "tablet", "phone"
 #   desktop    - optional: derived from kind + platform if omitted
-#   username   - optional: defaults to "martin"
+#   username   - optional: defaults to "matthewholden"
 #   gpu        - optional: vendors, compute.vendor, compute.vram, compute.unified
 #   tags       - optional: list of host tags
 #

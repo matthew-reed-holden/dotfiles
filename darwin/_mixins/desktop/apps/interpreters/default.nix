@@ -6,7 +6,7 @@
     ];
 
     brews = [
-      "bd"
+      "steveyegge/beads/bd"
       "biome"
       "llvm"
     ];

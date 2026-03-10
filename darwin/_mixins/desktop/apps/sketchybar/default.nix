@@ -3,8 +3,8 @@ _: {
     brews = [
       "nowplaying-cli"
       "switchaudio-osx"
-      "borders"
-      "sketchybar"
+      "FelixKratz/formulae/borders"
+      "FelixKratz/formulae/sketchybar"
     ];
 
     casks = [

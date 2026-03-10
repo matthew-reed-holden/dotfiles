@@ -11,7 +11,7 @@
       "postgresql@14" # Needed for psql cli
       "postgresql@17" # psql-17
       "sqlite3"
-      "supabase"
+      "supabase/tap/supabase"
     ];
 
     casks = [

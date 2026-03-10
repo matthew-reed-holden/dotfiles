@@ -6,7 +6,7 @@
     ];
 
     brews = [
-      "bun"
+      "oven-sh/bun/bun"
       "cocoapods"
       "git-flow-avh"
       "jupyter"
