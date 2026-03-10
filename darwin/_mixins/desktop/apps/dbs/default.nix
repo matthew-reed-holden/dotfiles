@@ -1,6 +1,9 @@
 { pkgs, ... }:
 {
   homebrew = {
+    taps = [
+      "supabase/tap"
+    ];
 
     brews = [
       "cmake" # Required for timescaledb
@@ -8,6 +11,7 @@
       "postgresql@14" # Needed for psql cli
       "postgresql@17" # psql-17
       "sqlite3"
+      "supabase"
     ];
 
     casks = [
