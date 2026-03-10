@@ -1,26 +1,29 @@
 { pkgs, ... }:
 {
   homebrew = {
+    taps = [
+      "anomalyco/tap"
+      "oven-sh/bun"
+    ];
+
     brews = [
+      "bun"
       "cocoapods"
-      "docker"
-      "docker-completion"
       "git-flow-avh"
       "jupyter"
       "jupyterlab"
       "neovim"
-      "nowplaying-cli"
       "mono-libgdiplus"
+      "opencode"
       "pre-commit"
-      "switchaudio-osx"
     ];
 
     casks = [
+      "bruno"
+      "ghostty"
       "git-credential-manager"
       "godot"
-      "ghostty"
       "logisim-evolution"
-      "sf-symbols"
     ];
 
   };

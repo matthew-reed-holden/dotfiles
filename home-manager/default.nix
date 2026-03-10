@@ -15,7 +15,7 @@ in
 {
   imports = [
     inputs.catppuccin.homeModules.catppuccin
-    inputs.nix-index-database.hmModules.nix-index
+    inputs.nix-index-database.homeModules.nix-index
   ];
 
   xdg.enable = true;
@@ -56,7 +56,7 @@ in
       "${config.xdg.configHome}/ghostty/config".text = builtins.readFile ./_mixins/configs/ghostty-config;
       ".hidden".text = ''snap'';
       "${config.xdg.configHome}/sketchybar/sketchybarrc".text =
-        builtins.readFile ./_mixins/configs/sketchybar-config.sketchybarrc;
+        builtins.readFile ./_mixins/configs/sketchybarrc;
     };
 
     # activation.installSketchyBarconfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -106,7 +106,6 @@ in
       # Add overlays your own flake exports (from overlays and pkgs dir):
       outputs.overlays.additions
       outputs.overlays.modifications
-      outputs.overlays.unstable-packages
     ];
     config = {
       allowUnfree = true;
@@ -257,6 +256,7 @@ in
       enableBashIntegration = true;
       enableFishIntegration = true;
       enableZshIntegration = true;
+      shellWrapperName = "y";
       settings = {
         manager = {
           show_hidden = false;

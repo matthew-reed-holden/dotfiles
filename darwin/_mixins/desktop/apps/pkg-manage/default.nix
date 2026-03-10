@@ -2,6 +2,7 @@
 {
   homebrew = {
     brews = [
+      "mas" # Mac App Store CLI
       "nuget" # Dotnet package manager
       "nvm" # Node version manager
     ];

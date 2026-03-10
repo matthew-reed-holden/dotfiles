@@ -1,7 +1,12 @@
 { pkgs, ... }:
 {
   homebrew = {
+    taps = [
+      "steveyegge/beads"
+    ];
+
     brews = [
+      "bd"
       "biome"
       "llvm"
     ];

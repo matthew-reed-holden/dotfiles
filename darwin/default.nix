@@ -48,8 +48,6 @@
       nvd
       php
       plistwatch
-      texliveTeTeX
-      tetex
       sops
       wireshark
       wget
@@ -75,7 +73,7 @@
 
   nix-homebrew = {
     enable = true;
-    enableRosetta = if (platform == "aarch64-darwin") then true else false;
+    enableRosetta = platform == "aarch64-darwin";
     autoMigrate = true;
     user = "${username}";
     mutableTaps = true;
@@ -88,7 +86,6 @@
     overlays = [
       outputs.overlays.additions
       outputs.overlays.modifications
-      outputs.overlays.unstable-packages
     ];
   };
 

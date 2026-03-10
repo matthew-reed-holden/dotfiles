@@ -1,4 +1,5 @@
-_: {
+{ pkgs, ... }:
+{
   homebrew = {
     brews = [
       "openssl"
@@ -11,11 +12,13 @@ _: {
       "gawk"
     ];
     casks = [
-      "google-chrome"
-      "nikitabobko/tap/aerospace"
       "obsidian"
       "slack"
     ];
 
   };
+
+  environment.systemPackages = with pkgs; [
+    inetutils # provides telnet, ftp, etc.
+  ];
 }
