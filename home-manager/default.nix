@@ -22,6 +22,7 @@ in
     inputs.catppuccin.homeModules.catppuccin
     inputs.mac-app-util.homeManagerModules.default
     inputs.nix-index-database.homeModules.nix-index
+    inputs.sops-nix.homeManagerModules.sops
   ];
 
   catppuccin = {
@@ -162,6 +163,7 @@ in
 
     ghostty = {
       enable = true;
+      package = if isDarwin then null else pkgs.ghostty;
       enableZshIntegration = true;
       settings = {
         shell-integration = "zsh";

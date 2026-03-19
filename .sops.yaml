@@ -1,0 +1,7 @@
+keys:
+  - &user_holdem3 age16em7ljc0ravdn4cadam3phqlvgm48mz55v0xhgz9e6mh3ng6ks2qeekj36
+creation_rules:
+  - path_regex: secrets/[^/]+\.(yaml|json|env)$
+    key_groups:
+      - age:
+        - *user_holdem3

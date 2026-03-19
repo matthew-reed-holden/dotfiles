@@ -70,8 +70,8 @@
     # (darwin-only) to be evaluated on Linux.
     #mac-app-util.inputs.flake-utils.follows = "flake-utils";
     mac-app-util.inputs.treefmt-nix.follows = "direnv-instant/treefmt-nix";
-    #sops-nix.url = "github:Mic92/sops-nix";
-    #sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     vscode-server.inputs.nixpkgs.follows = "nixpkgs";
     vscode-server.inputs.flake-utils.follows = "flake-utils";
@@ -160,7 +160,8 @@
             nixfmt
             nix-output-monitor
             openssh
-            #sops
+            sops
+            age
             statix
             taplo
           ];

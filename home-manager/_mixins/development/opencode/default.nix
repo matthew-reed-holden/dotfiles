@@ -60,4 +60,8 @@ in
     };
 
   };
+
+  xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
+    plugin= [ "opencode-beads" ];
+  };
 }

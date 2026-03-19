@@ -21,7 +21,8 @@
       just
       nix-output-monitor
       nvd
-      #sops
+      sops
+      age
     ];
 
     variables = {

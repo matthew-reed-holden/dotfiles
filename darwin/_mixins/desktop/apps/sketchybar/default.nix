@@ -15,6 +15,7 @@ _: {
     taps = [
       "FelixKratz/formulae"
       "koekeishiya/formulae"
+      "nikitabobko/tap"
     ];
 
   };
