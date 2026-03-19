@@ -543,38 +543,6 @@
         "type": "github"
       }
     },
-    "homebrew-cask": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1773180771,
-        "narHash": "sha256-i/we2y0nP+Tzbu4aeOihOmE7csl2YOwYo+kJ7gOk9Js=",
-        "owner": "homebrew",
-        "repo": "homebrew-cask",
-        "rev": "21ff73d671fe8cae13d1d480f3cb237381298ee2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "homebrew",
-        "repo": "homebrew-cask",
-        "type": "github"
-      }
-    },
-    "homebrew-core": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1773180909,
-        "narHash": "sha256-+oQiJa86t0NZ57r3z24MsvQ1PLJKQo1oFrALTLr9CFM=",
-        "owner": "homebrew",
-        "repo": "homebrew-core",
-        "rev": "43382c5206883e532c8dab89fb11e8d9e00f39f6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "homebrew",
-        "repo": "homebrew-core",
-        "type": "github"
-      }
-    },
     "import-tree": {
       "locked": {
         "lastModified": 1763762820,
@@ -979,6 +947,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_7": {
+      "locked": {
+        "lastModified": 1772956932,
+        "narHash": "sha256-M0yS4AafhKxPPmOHGqIV0iKxgNO8bHDWdl1kOwGBwRY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "608d0cadfed240589a7eea422407a547ad626a14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "pwmenu": {
       "inputs": {
         "flake-utils": [
@@ -1014,8 +998,6 @@
         "flake-parts": "flake-parts_2",
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",
-        "homebrew-cask": "homebrew-cask",
-        "homebrew-core": "homebrew-core",
         "iwmenu": "iwmenu",
         "llm-agents": "llm-agents",
         "mac-app-util": "mac-app-util",
@@ -1075,9 +1057,7 @@
     },
     "rust-overlay_2": {
       "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs_7"
       },
       "locked": {
         "lastModified": 1773115373,
