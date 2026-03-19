@@ -33,6 +33,7 @@ in
     fish.enable = config.programs.fish.enable;
     fzf.enable = config.programs.fzf.enable;
     gh-dash.enable = config.programs.gh.extensions.gh-dash;
+    ghostty.enable = config.programs.ghostty.enable;
     kitty.enable = true;
     micro.enable = config.programs.micro.enable;
     starship.enable = config.programs.starship.enable;
@@ -64,7 +65,7 @@ in
         builtins.readFile ./_mixins/configs/aerospace.toml;
       "${config.xdg.configHome}/yazi/keymap.toml".text =
         builtins.readFile ./_mixins/configs/yazi-keymap.toml;
-      "${config.xdg.configHome}/ghostty/config".text = builtins.readFile ./_mixins/configs/ghostty-config;
+
       ".hidden".text = "snap";
       "${config.xdg.configHome}/sketchybar/sketchybarrc".text =
         builtins.readFile ./_mixins/configs/sketchybarrc;
@@ -157,6 +158,16 @@ in
   programs = {
     alacritty = {
       enable = true;
+    };
+
+    ghostty = {
+      enable = true;
+      enableZshIntegration = true;
+      settings = {
+        shell-integration = "zsh";
+        shell-integration-features = "sudo";
+        term = "xterm-256color";
+      };
     };
 
     bat = {

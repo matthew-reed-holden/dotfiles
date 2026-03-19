@@ -1,5 +1,0 @@
-shell-integration = zsh
-shell-integration-features = sudo
-term=xterm-256color
-
-theme = catppuccin-mocha

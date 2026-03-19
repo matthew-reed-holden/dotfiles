@@ -22,6 +22,7 @@
       "git-credential-manager"
       "godot"
       "logisim-evolution"
+      "zed"
     ];
 
   };

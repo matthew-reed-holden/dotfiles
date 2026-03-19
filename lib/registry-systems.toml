@@ -27,18 +27,18 @@ kind = "computer"
 platform = "x86_64-linux"
 formFactor = "desktop"
 tags = [
-    "studio",
-    "davinci",
-    "gamedev",
-    "trackball",
-    "streamdeck",
-    "pci-hdmi-capture",
-    "inference",
-    "wayvnc",
-    "workspace",
-    "scrutiny",
-    "dropbox",
-    "borgbackup",
+  "studio",
+  "davinci",
+  "gamedev",
+  "trackball",
+  "streamdeck",
+  "pci-hdmi-capture",
+  "inference",
+  "wayvnc",
+  "workspace",
+  "scrutiny",
+  "dropbox",
+  "borgbackup",
 ]
 
 [vader.gpu]
@@ -75,18 +75,18 @@ kind = "computer"
 platform = "x86_64-linux"
 formFactor = "desktop"
 tags = [
-    "studio",
-    "davinci",
-    "gamedev",
-    "trackball",
-    "streamdeck",
-    "pci-hdmi-capture",
-    "inference",
-    "wayvnc",
-    "workspace",
-    "scrutiny",
-    "dropbox",
-    "borgbackup",
+  "studio",
+  "davinci",
+  "gamedev",
+  "trackball",
+  "streamdeck",
+  "pci-hdmi-capture",
+  "inference",
+  "wayvnc",
+  "workspace",
+  "scrutiny",
+  "dropbox",
+  "borgbackup",
 ]
 
 [phasma.gpu]
@@ -312,18 +312,18 @@ tags = ["wsl"]
 
 # Darwin - platform drives isDarwin; desktop defaults to "aqua"
 
-[shadowfax]
+[C002108230]
 kind = "computer"
 platform = "aarch64-darwin"
 formFactor = "laptop"
 username = "holdem3"
 
-[shadowfax.gpu]
+[C002108230.gpu]
 vendors = ["apple"]
 
-[shadowfax.gpu.compute]
+[C002108230.gpu.compute]
 vendor = "apple"
-vram = 8
+vram = 36
 unified = true
 
 [mithrandir]
