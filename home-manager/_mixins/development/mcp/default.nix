@@ -92,8 +92,26 @@ in
           command = "${pkgs.nodejs}/bin/npx";
           args = [ "-y" "@playwright/mcp@latest" ];
         };
+        sequential-thinking = {
+          command = "${pkgs.nodejs}/bin/npx";
+          args = [ "-y" "@modelcontextprotocol/server-sequential-thinking" ];
+        };
+        postgres = {
+          command = "${pkgs.nodejs}/bin/npx";
+          args = [ "-y" "@modelcontextprotocol/server-postgres" ];
+          env = {
+            POSTGRES_CONNECTION_STRING = "{env:POSTGRES_CONNECTION_STRING}";
+          };
+        };
         # Servers with secrets — use {env:VAR} for agents that support it;
         # sops exports the env vars via shell init below
+        github = {
+          command = "${pkgs.nodejs}/bin/npx";
+          args = [ "-y" "@modelcontextprotocol/server-github" ];
+          env = {
+            GITHUB_PERSONAL_ACCESS_TOKEN = "{env:GITHUB_PERSONAL_ACCESS_TOKEN}";
+          };
+        };
         firecrawl = {
           command = "${pkgs.nodejs}/bin/npx";
           args = [ "-y" "firecrawl-mcp" ];
@@ -125,6 +143,7 @@ in
       secrets = {
         CONTEXT7_API_KEY = { };
         FIRECRAWL_API_KEY = { };
+        GITHUB_PERSONAL_ACCESS_TOKEN = { };
         JINA_API_KEY = { };
       };
     };
@@ -134,6 +153,7 @@ in
       # Export MCP secrets from sops
       export CONTEXT7_API_KEY=$(cat ${config.sops.secrets.CONTEXT7_API_KEY.path} 2>/dev/null || echo "")
       export FIRECRAWL_API_KEY=$(cat ${config.sops.secrets.FIRECRAWL_API_KEY.path} 2>/dev/null || echo "")
+      export GITHUB_PERSONAL_ACCESS_TOKEN=$(cat ${config.sops.secrets.GITHUB_PERSONAL_ACCESS_TOKEN.path} 2>/dev/null || echo "")
       export JINA_API_KEY=$(cat ${config.sops.secrets.JINA_API_KEY.path} 2>/dev/null || echo "")
     '';
 

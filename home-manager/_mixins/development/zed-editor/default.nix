@@ -15,11 +15,30 @@ in
     programs.zed-editor = {
       enable = true;
       extensions = [
+        "ansible"
+        "astro"
+        "biome"
+        "catppuccin"
+        "catppuccin-icons"
         "dockerfile"
         "editorconfig"
+        "git-firefly"
+        "graphql"
+        "helm"
         "ini"
+        "java"
+        "justfile"
+        "lua"
         "make"
+        "nginx"
         "nix"
+        "proto"
+        "scss"
+        "sql"
+        "swift"
+        "terraform"
+        "toml"
+        "zig"
       ];
       package = if host.is.darwin then null else pkgs.unstable.zed-editor;
       userSettings = {
