@@ -69,16 +69,12 @@ let
     };
   };
 
-  # Package.json for OpenCode plugin dependency
-  # force = true because this replaces the manually-created file.
-  opencodePackageJson = {
-    "${configDir}/opencode/package.json" = {
-      text = builtins.toJSON {
-        dependencies = {
-          "@opencode-ai/plugin" = "1.2.24";
-        };
-      };
-      force = true;
+  # Package.json content for OpenCode plugin dependency
+  # NOT managed as a Home Manager file — it must be writable at runtime
+  # because `bun install` / `npm install` and OpenCode itself write to it.
+  opencodePackageJsonContent = builtins.toJSON {
+    dependencies = {
+      "@opencode-ai/plugin" = "1.2.24";
     };
   };
 
@@ -124,22 +120,33 @@ in
       // opencodeSuperpowersSource
       // opencodeSuperpowersPlugin
       // opencodeSuperpowersSkills
-      // opencodePackageJson
       # Claude Code personal plugin
       // claudePluginManifest
       // claudeAgentFiles
       // claudeCommandFiles
       // claudeInstructionsFile;
 
-    # Run bun/npm install for the OpenCode plugin dependency after files are written
+    # Write package.json as a mutable file and install OpenCode plugin deps.
+    # Must be a real file (not a Nix store symlink) because bun/npm and
+    # OpenCode need write access at runtime.
     home.activation.installOpenCodePluginDeps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ -f "${configDir}/opencode/package.json" ]; then
-        export PATH="${config.home.profileDirectory}/bin:$PATH"
-        if command -v bun >/dev/null 2>&1; then
-          $DRY_RUN_CMD bun install --cwd "${configDir}/opencode" 2>/dev/null || true
-        elif command -v npm >/dev/null 2>&1; then
-          $DRY_RUN_CMD npm install --prefix "${configDir}/opencode" 2>/dev/null || true
-        fi
+      oc_dir="${configDir}/opencode"
+      oc_pkg="$oc_dir/package.json"
+      $DRY_RUN_CMD mkdir -p "$oc_dir"
+      # Remove stale Nix store symlink if left over from a previous generation
+      if [ -L "$oc_pkg" ]; then
+        $DRY_RUN_CMD rm "$oc_pkg"
+      fi
+      if [ -z "''${DRY_RUN:-}" ]; then
+        cat > "$oc_pkg" <<'PACKAGEJSON'
+${opencodePackageJsonContent}
+PACKAGEJSON
+      fi
+      export PATH="${config.home.profileDirectory}/bin:$PATH"
+      if command -v bun >/dev/null 2>&1; then
+        $DRY_RUN_CMD bun install --cwd "$oc_dir" 2>/dev/null || true
+      elif command -v npm >/dev/null 2>&1; then
+        $DRY_RUN_CMD npm install --prefix "$oc_dir" 2>/dev/null || true
       fi
     '';
   };
