@@ -45,7 +45,13 @@ in
         auto_update = false;
         base_keymap = "VSCode";
         buffer_font_family = "FiraCode Nerd Font Mono";
-        buffer_font_size = 16;
+        buffer_font_size = 12;
+        buffer_font_weight = 400;
+        ui_font_family = "Work Sans";
+        ui_font_size = 16;
+        ui_font_weight = 400;
+        agent_buffer_font_size = 12;
+        agent_ui_font_size = 13;
         cursor_shape = "block";
         tab_size = 2;
         telemetry = {
@@ -56,7 +62,7 @@ in
           copy_on_select = true;
           cursor_shape = "block";
           font_family = "FiraCode Nerd Font Mono";
-          font_size = 16;
+          font_size = 13;
         };
       };
     };

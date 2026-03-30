@@ -42,6 +42,10 @@ in
     zsh-syntax-highlighting.enable = config.programs.zsh.enable;
   };
 
+  # Disable copying apps to ~/Applications — requires App Management permission
+  # which Jamf MDM keeps revoking on this managed machine.
+  targets.darwin.copyApps.enable = lib.mkIf (username == "holdem3") false;
+
   xdg.enable = true;
   xdg.configHome = "/Users/${username}/.config";
 

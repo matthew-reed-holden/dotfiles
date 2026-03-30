@@ -10,17 +10,15 @@ let
   mcpSopsFile = ../../../../secrets/mcp.yaml;
 
   # Transform programs.mcp.servers into Zed's context_servers format
-  # Stdio: { name = { command = { path = "cmd"; args = [...]; env = {...}; }; }; }
+  # Stdio (flat): { name = { command = "cmd"; args = [...]; env = {...}; }; }
   # Remote: { name = { url = "..."; headers = {...}; }; }
   transformToZedContextServer = name: server:
     if server ? command then {
       name = name;
       value = {
-        command = {
-          path = server.command;
-          args = server.args or [ ];
-        } // (lib.optionalAttrs (server ? env) { env = server.env; });
-      };
+        command = server.command;
+        args = server.args or [ ];
+      } // (lib.optionalAttrs (server ? env) { env = server.env; });
     } else if server ? url then {
       name = name;
       value = {

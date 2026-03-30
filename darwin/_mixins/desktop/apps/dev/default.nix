@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
+let
+  username = config.noughty.user.name;
+in
 {
   homebrew = {
     taps = [
@@ -28,8 +31,12 @@
   };
 
   environment.systemPackages = with pkgs; [
+    dolt
+    go
+    gopls
     kubernetes-helm
     kubectl
+    kubectx
     helm-ls
     helmfile
     helmsman
@@ -41,5 +48,9 @@
     tenv
     terraformer
     terraform-ls
+  ]
+  ++ lib.optionals (username == "holdem3") [
+    qemu
+    vagrant
   ];
 }
