@@ -20,4 +20,16 @@
   };
 
   programs.home-manager.enable = true;
+
+  programs.ghostty = {
+    enable = true;
+    package = null;
+    systemd.enable = false;
+    settings = {
+      theme = "catppuccin-mocha";
+      font-size = 10;
+      shell-integration = "detect";
+      shell-integration-features = "cursor,sudo,title,path";
+    };
+  };
 }

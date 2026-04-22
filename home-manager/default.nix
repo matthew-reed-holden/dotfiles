@@ -171,7 +171,7 @@ in
       enableZshIntegration = true;
       settings = {
         shell-integration = "zsh";
-        shell-integration-features = "sudo";
+        shell-integration-features = "cursor,sudo,title,path";
         term = "xterm-256color";
       };
     };
