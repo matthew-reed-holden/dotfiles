@@ -45,10 +45,16 @@ let
         inherit name;
       };
 
+      # TOML has no null, so "none" is the sentinel an entry uses to opt
+      # out of the kDefaults desktop value — e.g. for boxes where Nix
+      # does not manage the desktop environment.
+      normalized =
+        if merged.desktop or null == "none" then merged // { desktop = null; } else merged;
+
       # Look up user-level metadata from the users table.
-      userEntry = users.${merged.username} or { };
+      userEntry = users.${normalized.username} or { };
     in
-    merged // { inherit userEntry; };
+    normalized // { inherit userEntry; };
 
   # Predicate functions for filtering registry entries
   isLinuxEntry = e: lib.hasSuffix "-linux" e.platform;
@@ -173,6 +179,11 @@ rec {
       userTags ? [ ],
     }:
     let
+      isLinux = lib.hasSuffix "-linux" platform;
+      # Linux hosts start from a minimal entrypoint so user-space on Arch
+      # (and other non-NixOS Linux) is opted into feature-by-feature.
+      # Darwin hosts keep the long-standing monolithic entrypoint.
+      homeEntrypoint = if isLinux then ../home-manager/linux else ../home-manager;
       # Generate the Catppuccin palette for this system
       catppuccinPalette = mkCatppuccinPalette { system = platform; };
     in
@@ -187,7 +198,7 @@ rec {
           ;
       };
       modules = [
-        ../home-manager
+        homeEntrypoint
         {
           noughty.host = {
             name = hostname;
