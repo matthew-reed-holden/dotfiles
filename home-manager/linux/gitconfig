@@ -1,0 +1,34 @@
+[user]
+  name = Matthew Holden
+  email = matthewreedholden@icloud.com
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGccV3PotXfVvNhwTgrJF9vtvcJbgQ3M9DSAfe8el7hK
+
+[gpg]
+  format = ssh
+
+[gpg "ssh"]
+  allowedSignersFile = ~/.config/git/allowed_signers
+
+[commit]
+  gpgsign = true
+
+[tag]
+  gpgsign = true
+
+[init]
+  defaultBranch = main
+
+[pull]
+  rebase = true
+
+[push]
+  autoSetupRemote = true
+
+[rerere]
+  enabled = true
+
+[diff]
+  algorithm = histogram
+
+[merge]
+  conflictstyle = zdiff3

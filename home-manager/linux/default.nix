@@ -18,6 +18,11 @@
     username = config.noughty.user.name;
     homeDirectory = "/home/${config.noughty.user.name}";
     sessionPath = [ "$HOME/.local/bin" ];
+    # Point SSH (and ssh-keygen, used by git for SSH commit signing) at
+    # the 1Password agent socket. Without this set, git -S / ssh-add
+    # can't find the agent despite ~/.ssh/config's IdentityAgent hint,
+    # because ssh-keygen doesn't read ssh_config.
+    sessionVariables.SSH_AUTH_SOCK = "$HOME/.1password/agent.sock";
   };
 
   programs.home-manager.enable = true;
@@ -92,6 +97,15 @@
   # the theme into ~/.config/zsh/ and source it from .zshrc.
   xdg.configFile."zsh/catppuccin-mocha.zsh".source =
     ./zsh-syntax-highlighting-catppuccin-mocha.zsh;
+
+  # Git — pattern 3 (programs.git.package isn't nullable). Identity,
+  # modern defaults, and SSH commit signing via 1Password's agent using
+  # id_github. HTTPS credential helper (1Password CLI) TBD — add when
+  # the op:// path for a GitHub PAT is confirmed.
+  xdg.configFile."git/config".source = ./gitconfig;
+
+  # Allowed signers for `git log --show-signature` verification.
+  xdg.configFile."git/allowed_signers".source = ./git-allowed-signers;
 
   programs.ghostty = {
     enable = true;
