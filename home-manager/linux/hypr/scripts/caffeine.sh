@@ -133,6 +133,43 @@ cmd_until() {
           sleep $(( target - now ))
 }
 
+# Both variants collapse to the same holder: tail exits the instant the
+# watched pid does, which releases the lock. Running the command in the
+# caller's own shell (rather than inside the unit) keeps its terminal and
+# its exit code, and lets waybar repaint immediately instead of at exit.
+# CAFFEINE_LABEL overrides the derived label. The menu's custom-command
+# branch sets it, because it invokes `bash -c "<cmd>"` and would otherwise
+# label every custom command "bash".
+cmd_while() {
+    local pid rc=0
+    if [ "${1:-}" = --pid ]; then
+        pid=${2:-}
+        if ! kill -0 "$pid" 2>/dev/null; then
+            notify "Caffeine" "No such process: $pid"
+            return 1
+        fi
+        start while 0 \
+              "${CAFFEINE_LABEL:-$(ps -p "$pid" -o comm= 2>/dev/null || echo "pid $pid")}" \
+              tail --pid="$pid" -f /dev/null
+        return 0
+    fi
+
+    if [ $# -eq 0 ]; then
+        echo "usage: caffeine.sh while <cmd...>" >&2
+        return 1
+    fi
+
+    # <&0 is load-bearing: a non-interactive bash redirects a background
+    # job's stdin from /dev/null, which would break any interactive command.
+    "$@" <&0 &
+    pid=$!
+    start while 0 "${CAFFEINE_LABEL:-$(basename "$1")}" \
+          tail --pid="$pid" -f /dev/null
+    wait "$pid" || rc=$?
+    cmd_off
+    return "$rc"
+}
+
 # ExecStopPost hook. Running the release side from systemd rather than the
 # client means expiry, manual stop, and menu-driven stop all converge here.
 cmd_stopped() {
@@ -226,6 +263,43 @@ selftest() {
     cmd_off
     sleep 0.5
 
+    sleep 5 &
+    holdpid=$!
+    cmd_while --pid "$holdpid"
+    sleep 0.5
+    if read_state && [ "$mode" = while ] && [ "$end" = 0 ]; then
+        pass "while --pid: mode is while|0"
+    else
+        fail "while --pid: mode is while|0"
+    fi
+    kill "$holdpid" 2>/dev/null || true
+    wait "$holdpid" 2>/dev/null || true
+    sleep 1.5
+    if active; then
+        fail "while --pid: unit dies with the process"
+    else
+        pass "while --pid: unit dies with the process"
+    fi
+
+    # A pid that is guaranteed dead rather than a large number that might
+    # happen to be live.
+    true &
+    deadpid=$!
+    wait "$deadpid" 2>/dev/null || true
+    if cmd_while --pid "$deadpid" 2>/dev/null; then
+        fail "while --pid: rejects a dead pid"
+    else
+        pass "while --pid: rejects a dead pid"
+    fi
+
+    cmd_while sleep 2
+    sleep 0.5
+    if active; then
+        fail "while <cmd>: releases when the command exits"
+    else
+        pass "while <cmd>: releases when the command exits"
+    fi
+
     echo "$fails failure(s)"
     return $(( fails > 0 ))
 }
@@ -236,7 +310,8 @@ case "${1:-}" in
     toggle)   cmd_toggle ;;
     for)      shift; cmd_for   "${1:-}" ;;
     until)    shift; cmd_until "${1:-}" ;;
+    while)    shift; cmd_while "$@" ;;
     _stopped) cmd_stopped ;;
     selftest) selftest ;;
-    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|selftest}" >&2; exit 2 ;;
+    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|while <cmd>|selftest}" >&2; exit 2 ;;
 esac
