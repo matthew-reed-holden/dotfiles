@@ -49,6 +49,7 @@ window#waybar {
 /* Custom modules. */
 #custom-updates,
 #custom-notification,
+#custom-caffeine,
 #custom-exit {
     background-color: @surface;
     color: @on_surface;
@@ -58,6 +59,8 @@ window#waybar {
 }
 #custom-updates      { color: @tertiary; }
 #custom-notification { color: @secondary; }
+#custom-caffeine            { color: @outline; }
+#custom-caffeine.active     { color: @tertiary; }
 #custom-exit         { color: @error; }
 #custom-exit:hover   { background-color: @error; color: @on_error; }
 
