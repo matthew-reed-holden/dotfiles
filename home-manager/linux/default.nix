@@ -20,7 +20,11 @@
     inherit stateVersion;
     username = config.noughty.user.name;
     homeDirectory = "/home/${config.noughty.user.name}";
-    sessionPath = [ "$HOME/.local/bin" ];
+    sessionPath = [
+      "$HOME/.local/bin"
+      # `go install` drops binaries in $GOPATH/bin (default ~/go/bin).
+      "$HOME/go/bin"
+    ];
     # Point SSH (and ssh-keygen, used by git for SSH commit signing) at
     # the 1Password agent socket. Without this set, git -S / ssh-add
     # can't find the agent despite ~/.ssh/config's IdentityAgent hint,
@@ -45,6 +49,20 @@
   # missing in fresh shells.
   home.file.".zshenv".text = ''
     . ${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh
+
+    # hm-session-vars.sh self-guards with __HM_SESS_VARS_SOURCED, so any
+    # sessionPath entries added after a graphical login never make it
+    # into child shells until the systemd user session restarts. Wire
+    # PATH additions explicitly here so every zsh invocation picks them
+    # up regardless of the guard.
+    case ":$PATH:" in
+      *":$HOME/.local/bin:"*) ;;
+      *) export PATH="$HOME/.local/bin:$PATH" ;;
+    esac
+    case ":$PATH:" in
+      *":$HOME/go/bin:"*) ;;
+      *) export PATH="$HOME/go/bin:$PATH" ;;
+    esac
   '';
 
   home.file.".zshrc".text = ''
@@ -102,13 +120,6 @@
     # NVM (pacman 0.40.4 at /usr/share/nvm/)
     . /usr/share/nvm/init-nvm.sh
 
-    # zoxide — hand-wired (programs.zoxide.package isn't nullable, and
-    # its shell integration gates on programs.zsh.enable which we don't
-    # use). --cmd cd replaces the builtin so `cd proj` jumps by
-    # frecency; `cdi` opens an interactive picker; plain paths still
-    # work as normal cd input.
-    eval "$(/usr/bin/zoxide init zsh --cmd cd)"
-
     eval "$(/usr/bin/starship init zsh)"
 
     # fzf — key bindings (Ctrl+R history, Ctrl+T file paste, Alt+C cd)
@@ -152,6 +163,13 @@
     # the sops-decrypted paths into env vars for any shell tool that
     # reads them.
     [ -f "$HOME/.zshrc.mcp-secrets" ] && source "$HOME/.zshrc.mcp-secrets"
+
+    # zoxide — must be initialized LAST (zoxide doctor exits 144
+    # otherwise). Plugins above wrap zle widgets / touch chpwd hooks,
+    # which the doctor flags as a "possible configuration issue".
+    # --cmd cd replaces the builtin so `cd proj` jumps by frecency;
+    # `cdi` opens an interactive picker.
+    eval "$(/usr/bin/zoxide init zsh --cmd cd)"
   '';
 
   # Pattern 3 for starship: programs.starship would install nix's starship
@@ -419,6 +437,31 @@
 
   # .Xresources — legacy XWayland palette.
   home.file.".Xresources".source = ./Xresources/.Xresources;
+
+  # Take ownership of packaged user-unit enable state for the Hyprland
+  # session. Each Arch package ships a /usr/lib/systemd/user/<name>.service
+  # WantedBy=graphical-session.target — but Arch leaves them disabled,
+  # so `systemctl --user preset-all` (or anyone running `enable` by hand)
+  # could flip state under us. Declare what we want here:
+  #
+  #   - hypridle/waybar: packaged unit ExecStart matches our intent.
+  #     Let systemd own them (auto-restart on crash, journalctl by name).
+  #     Removed from hypr/conf/autostart.conf.
+  #
+  #   - cliphist: packaged unit only watches text. We need text+image,
+  #     so we keep exec-once in autostart.conf and mask the unit to
+  #     prevent a second text-watcher from arming.
+  #
+  # `run` (home-manager's verbose wrapper) prints each command; the
+  # symlink-style enable/mask ops are idempotent — re-running is a no-op.
+  home.activation.enableUserUnits =
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ -x /usr/bin/systemctl ]; then
+        run /usr/bin/systemctl --user enable hypridle.service waybar.service
+        run /usr/bin/systemctl --user mask cliphist.service
+        run /usr/bin/systemctl --user daemon-reload
+      fi
+    '';
 
   # Seed empty matugen-output files so @import doesn't error pre-matugen.
   home.activation.gtkColorsSeed =

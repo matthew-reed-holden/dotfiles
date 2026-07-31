@@ -60,6 +60,16 @@ bluez-utils          # bluetoothctl
 blueman              # Bluetooth GUI (clicked from waybar bluetooth)
 
 
+# ─── Audio (PipeWire owns everything) ────────────────────
+# pipewire-pulse replaces real pulseaudio (conflicts on install —
+# remove pulseaudio + pulseaudio-bluetooth). Two servers fighting
+# over ALSA devices broke browser video playback; wireplumber's
+# bluez5 handles Bluetooth audio.
+pipewire
+pipewire-pulse
+wireplumber
+
+
 # ─── Theming bridges (Qt + legacy XWayland) ──────────────
 qt6ct                # Qt6 theme/icon control
 qt5ct                # Qt5 equivalent (still some apps)
@@ -108,8 +118,36 @@ syncthing
 restic
 
 
-# ─── VPN (kernel WireGuard) ──────────────────────────────
-wireguard-tools
+# ─── VPN ─────────────────────────────────────────────────
+wireguard-tools      # kernel WireGuard
+tailscale            # extra — mesh VPN (tailscaled daemon: systemctl enable --now tailscaled)
+tailscaledesktop     # AUR — unofficial Tailscale desktop GUI
+
+
+# ─── Dev runtimes / toolchain ────────────────────────────
+just                 # extra — command runner (drives our justfile)
+yay                  # endeavouros — AUR helper (bootstraps everything else here)
+bun                  # extra — JS runtime / package manager
+biome                # extra — JS/TS linter + formatter
+ollama-cuda          # extra — local LLM runtime (CUDA build)
+
+
+# ─── Infra / cloud ───────────────────────────────────────
+terraform            # extra
+google-cloud-cli     # AUR — gcloud core (beta/alpha)
+
+
+# ─── Editors / diff / practice ───────────────────────────
+code                 # extra — VSCode OSS
+code-marketplace     # AUR — enables the VSCode marketplace in Code OSS
+meld                 # extra — visual diff/merge
+haruna               # extra — mpv-based video player
+exercism             # AUR — exercism.io CLI
+
+
+# ─── Databases ───────────────────────────────────────────
+postgresql           # extra — server + client
+dolt                 # extra — git-style versioned SQL DB
 
 
 # ─── Database GUI ────────────────────────────────────────
@@ -252,7 +290,8 @@ jq                   # JSON processor / filter
 # ─── Docker credential helper (KWallet / libsecret) ──────
 kwallet
 kwalletmanager
-docker-credential-secretservice  # AUR — bridges docker login to KWallet
+kwallet-pam         # auto-unlock kwallet at login (requires /etc/pam.d/login edit; see notes)
+docker-credential-secretservice-bin  # AUR (prebuilt) — bridges docker login to KWallet
 
 
 # ─── Supabase CLI ────────────────────────────────────────
@@ -261,6 +300,10 @@ supabase-bin         # AUR (prebuilt) — official `supabase` package lags
 
 # ─── Windows USB creator (AUR, rarely-used) ──────────────
 woeusb-ng            # AUR
+
+
+# ─── Python toolchain ────────────────────────────────────
+uv                   # extra — uv + uvx (Python pkg/proj mgr). NOT the curl installer: it can't patch our read-only ~/.zshrc and shadows pacman's /usr/bin/uv from ~/.local/bin
 
 
 # ─── Build tooling (yay needs base-devel for AUR builds) ─
