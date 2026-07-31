@@ -84,6 +84,51 @@ cmd_toggle() {
     if active; then cmd_off; else cmd_on; fi
 }
 
+# Delegates both validation and conversion to systemd-analyze, which
+# accepts "2h", "90min", "45s", "1h30m" and prints its own error text.
+parse_timespan() {
+    local out us
+    if ! out=$(systemd-analyze timespan "$1" 2>&1); then
+        printf '%s\n' "$out" >&2
+        return 1
+    fi
+    us=$(awk '/μs:/{print $2}' <<<"$out")
+    if [ -z "$us" ]; then
+        echo "could not parse timespan '$1'" >&2
+        return 1
+    fi
+    echo $(( us / 1000000 ))
+}
+
+cmd_for() {
+    local secs
+    if ! secs=$(parse_timespan "${1:-}"); then
+        notify "Caffeine" "Bad duration: ${1:-}"
+        return 1
+    fi
+    if [ "$secs" -le 0 ]; then
+        notify "Caffeine" "Duration must be greater than zero"
+        return 1
+    fi
+    start for "$(( $(date +%s) + secs ))" "for $1" sleep "$secs"
+}
+
+cmd_until() {
+    local target now
+    if ! target=$(date -d "${1:-}" +%s 2>/dev/null); then
+        notify "Caffeine" "Bad time: ${1:-}"
+        return 1
+    fi
+    now=$(date +%s)
+    # ponytail: naive +1 day rollover, ignores DST. Fine for a wake lock;
+    # switch to `date -d "tomorrow $1"` if an hour of drift ever matters.
+    if [ "$target" -le "$now" ]; then target=$(( target + 86400 )); fi
+    # Weekday in the label so a rolled-over or "tomorrow 9am" target does
+    # not read identically to one later today.
+    start until "$target" "until $(date -d "@$target" '+%a %H:%M')" \
+          sleep $(( target - now ))
+}
+
 # ExecStopPost hook. Running the release side from systemd rather than the
 # client means expiry, manual stop, and menu-driven stop all converge here.
 cmd_stopped() {
@@ -129,6 +174,49 @@ selftest() {
         pass "off: inhibitor released"
     fi
 
+    cmd_for 30s
+    sleep 0.5
+    if read_state && [ "$mode" = for ]; then
+        pass "for: mode is for"
+    else
+        fail "for: mode is for"
+    fi
+    left=$(( end - $(date +%s) ))
+    if [ "$left" -ge 25 ] && [ "$left" -le 31 ]; then
+        pass "for 30s: end epoch lands in 25-31s"
+    else
+        fail "for 30s: end epoch lands in 25-31s (got $left)"
+    fi
+    cmd_off
+    sleep 0.5
+
+    if cmd_for banana 2>/dev/null; then
+        fail "for: rejects unparseable timespan"
+    else
+        pass "for: rejects unparseable timespan"
+    fi
+    if active; then
+        fail "for: rejected input starts no unit"
+    else
+        pass "for: rejected input starts no unit"
+    fi
+
+    if cmd_until banana 2>/dev/null; then
+        fail "until: rejects unparseable time"
+    else
+        pass "until: rejects unparseable time"
+    fi
+
+    cmd_until 23:59
+    sleep 0.5
+    if read_state && [ "$mode" = until ] && [ "$end" -gt "$(date +%s)" ]; then
+        pass "until: end epoch is in the future"
+    else
+        fail "until: end epoch is in the future"
+    fi
+    cmd_off
+    sleep 0.5
+
     echo "$fails failure(s)"
     return $(( fails > 0 ))
 }
@@ -137,7 +225,9 @@ case "${1:-}" in
     on)       cmd_on ;;
     off)      cmd_off ;;
     toggle)   cmd_toggle ;;
+    for)      shift; cmd_for   "${1:-}" ;;
+    until)    shift; cmd_until "${1:-}" ;;
     _stopped) cmd_stopped ;;
     selftest) selftest ;;
-    *)        echo "usage: caffeine.sh {on|off|toggle|selftest}" >&2; exit 2 ;;
+    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|selftest}" >&2; exit 2 ;;
 esac
