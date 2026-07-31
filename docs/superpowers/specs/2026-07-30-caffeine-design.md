@@ -31,10 +31,22 @@ A single transient systemd user unit named `caffeine.service` wraps
 systemd-run --user --unit=caffeine \
   --description="<mode>|<end_epoch>|<label>" \
   --property=CollectMode=inactive-or-failed \
-  --property=ExecStopPost="$HOME/.local/bin/caffeine.sh _stopped" \
+  --property=ExecStopPost="/usr/bin/bash <script> _stopped" \
   systemd-inhibit --what=idle:sleep --who=caffeine --why="<label>" \
   <holder>
 ```
+
+`ExecStopPost` invokes the script through an explicit `bash` rather than
+running it directly, so the mode of the source file is irrelevant. Repo
+convention keeps scripts at 644 and lets `home.file` set `executable = true`
+at install time; a direct `ExecStopPost=<script>` on a 644 file fails the
+whole start job.
+
+There is no matching `ExecStartPost`. During `ExecStartPost` the unit is
+still `activating`, so a hook that gates on `is-active` sees "not
+caffeinated" and does nothing. The start-side notification and waybar signal
+therefore run client-side, immediately after `systemd-run` returns — which
+it does only once the start job has completed and the unit reports `active`.
 
 `<holder>` is the only thing that varies by mode — it is the process whose
 lifetime defines the caffeinated span:
@@ -65,8 +77,9 @@ The unit is the single source of truth. Liveness is
 `Description`. There is no pidfile and no state file to drift out of sync.
 When the holder exits the unit exits, the inhibitor is released, and
 `CollectMode=inactive-or-failed` garbage-collects the unit even if it
-failed. Expiry and manual stop both arrive at the same `ExecStopPost` hook,
-so one code path handles notification and waybar repaint.
+failed. Expiry, manual stop, and menu-driven stop all arrive at the same
+`ExecStopPost` hook, so one code path handles the release notification and
+waybar repaint no matter what ended the span.
 
 Verified live on shadowfax: the unit starts, `systemd-inhibit --list`
 reports `caffeine ... sleep:idle ... block`, `Description` round-trips, and
@@ -110,7 +123,9 @@ to handle.
 
 `while <cmd>` backgrounds the command in the caller's shell, holds the lock
 against its PID, waits for it, releases the lock, and exits with the
-command's own status.
+command's own status. The background job needs an explicit `<&0` — a
+non-interactive bash otherwise redirects background stdin from `/dev/null`,
+which would break any interactive command.
 
 ### Parsing and validation
 
@@ -118,8 +133,8 @@ command's own status.
   conversion to seconds.
 - `until` delegates to `date -d`. A time that has already passed today rolls
   forward to tomorrow.
-- A rejected value notifies with the parser's own error text and exits
-  non-zero without touching the unit.
+- A rejected value notifies with a short message, passes the parser's own
+  error text through to stderr, and exits non-zero without touching the unit.
 
 ## Menu
 
@@ -131,13 +146,19 @@ The main menu is a fixed six entries. It does not branch on current state —
 preserves muscle memory.
 
 ```
-󰅶  Caffeinate
 󰆓  Decaffeinate
+󰅶  Caffeinate
 󰥔  Caffeinate for…
 󰅐  Caffeinate until…
 󰄉  Caffeinate while…
 󰋼  Status
 ```
+
+Decaffeinate is listed first so the `*Decaffeinate` glob in the dispatch
+`case` cannot be shadowed by the `*Caffeinate` one.
+
+`rofi -dmenu` exits 1 when dismissed, so every menu capture needs `|| true`
+under `set -e` or the script dies before its empty-selection guard runs.
 
 Submenus:
 
@@ -203,7 +224,8 @@ Placement in `modules-right`: between `custom/notification` and
 `notify-send` via swaync, which is already running:
 
 - On start — `Caffeinated` with the derived label (`indefinite`,
-  `until 17:00`, `while firefox`).
+  `until Thu 17:00`, `while firefox`). Fired client-side from `start()`,
+  not from a unit hook.
 - On stop or expiry — `Decaffeinated`, fired from `_stopped` so both paths
   are covered by one hook.
 - On `status` — current mode, label, and remaining time; also echoed to
@@ -249,7 +271,7 @@ no framework:
 
 1. `for 30s` → unit is active, `systemd-inhibit --list` contains a
    `caffeine` entry with `sleep:idle`, and the computed remaining time lands
-   in 25–30s.
+   in 25–31s.
 2. `off` → unit is gone and the inhibitor is released.
 3. `for banana` and `until banana` → non-zero exit, no unit created.
 
