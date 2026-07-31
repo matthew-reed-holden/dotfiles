@@ -163,8 +163,14 @@ cmd_while() {
     # job's stdin from /dev/null, which would break any interactive command.
     "$@" <&0 &
     pid=$!
-    start while 0 "${CAFFEINE_LABEL:-$(basename "$1")}" \
-          tail --pid="$pid" -f /dev/null
+    # Testing start's status keeps set -e from killing the script here and
+    # abandoning the child we just forked. The command is what the user
+    # cares about; the lock is the accessory, so a failed lock warns rather
+    # than taking the command down with it.
+    if ! start while 0 "${CAFFEINE_LABEL:-$(basename "$1")}" \
+              tail --pid="$pid" -f /dev/null; then
+        echo "caffeine: lock failed, running uncaffeinated" >&2
+    fi
     wait "$pid" || rc=$?
     cmd_off
     return "$rc"
