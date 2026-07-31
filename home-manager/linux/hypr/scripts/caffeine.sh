@@ -27,10 +27,53 @@ WAYBAR_SIG=8
 # The unit Description remains the only source of truth.
 REPLACING="$RUNTIME/caffeine.replacing"
 
-ICON_OFF=$'\U000F0193'   # nf-md-cup_outline — hollow cup, no steam
-ICON_ON=$'\U000F0176'    # nf-md-coffee      — filled cup, steam
+# Verified against the cmap of NotoSansM Nerd Font Mono, the family
+# waybar/style.css sets. No Material Design coffee glyph carries steam —
+# fa-mug_hot is the only hot-drink icon in the font that does, which is
+# why the pair crosses icon sets.
+ICON_OFF=$'\U000F06CA'   # nf-md-coffee_outline — hollow cup, no steam
+ICON_ON=$'\U0000EF59'    # nf-fa-mug_hot        — filled mug, steam
 
 ROFI_CFG="$HOME/.config/rofi/config-compact.rasi"
+
+# Notification icons. Tela-circle-dracula (our gtk icon theme) ships these
+# purpose-built, so they cost nothing and re-theme with everything else.
+# Named, not pathed — swaync resolves them through the icon theme.
+NOTIFY_ICON_ON=budgie-caffeine-cup-full
+NOTIFY_ICON_OFF=budgie-caffeine-cup-empty
+
+# Flavor lines, one drawn at random per event. Four registers deliberately
+# mixed — Tolkien, barista, jitters, deadpan — rather than committing the
+# script to a single voice.
+# ponytail: random draw, not a true rotation. A no-repeat cycle would need a
+# persisted index, and the unit Description is meant to be the only state.
+FLAVOR_ON=(
+    "You shall not sleep."      "Ride on, Shadowfax."     "The board is set."
+    "Fly, you fools."           "The way to sleep is shut."
+    "Espresso pulled."          "Another round, then."    "Beans committed."
+    "Double shot, no room."     "Fresh pot on."
+    "WIRED."                    "Sleep is a construct."   "I can see sound."
+    "No thoughts. Only up."     "Vibrating slightly."
+    "Sleep deferred."           "The machine persists."   "Idle is cancelled."
+    "Staying up. On purpose."   "hypridle has opinions."
+)
+FLAVOR_OFF=(
+    "Rest now."                 "The long defeat is over." "Homeward, then."
+    "The watch is ended."       "Sleep, and dream of the Shire."
+    "Cup's empty."              "Closing time."            "Last call."
+    "Machine's off."            "Tab closed."
+    "Crashing."                 "The jitters subside."     "Powering down."
+    "Sweet, sweet sleep."       "Back to baseline."
+    "Sleep restored."           "Standing down."           "Idle re-enabled."
+    "Going back to bed."        "Normal service resumed."
+)
+
+flavor() {  # flavor on|off — one random line
+    case $1 in
+        on)  printf '%s\n' "${FLAVOR_ON[RANDOM % ${#FLAVOR_ON[@]}]}"  ;;
+        off) printf '%s\n' "${FLAVOR_OFF[RANDOM % ${#FLAVOR_OFF[@]}]}" ;;
+    esac
+}
 
 active() { systemctl --user -q is-active "$UNIT.service" 2>/dev/null; }
 
@@ -45,10 +88,12 @@ read_state() {
     [ -n "${mode:-}" ] && [ -n "${end:-}" ]
 }
 
-notify() {
+notify() {  # notify <summary> [body] [icon-name]
+    local icon=()
+    if [ -n "${3:-}" ]; then icon=(-i "$3"); fi
     notify-send -a Caffeine \
         -h string:x-canonical-private-synchronous:caffeine \
-        "$1" "${2:-}" 2>/dev/null || true
+        "${icon[@]}" "$1" "${2:-}" 2>/dev/null || true
 }
 
 signal_waybar() { pkill "-RTMIN+$WAYBAR_SIG" waybar 2>/dev/null || true; }
@@ -80,7 +125,9 @@ start() {
     then
         return 1
     fi
-    notify "Caffeinated" "$label"
+    # Flavor goes in the summary, the fact stays in the body — the toast is
+    # still readable as status at a glance.
+    notify "$(flavor on)" "Caffeinated · $label" "$NOTIFY_ICON_ON"
     signal_waybar
 }
 
@@ -228,8 +275,11 @@ cmd_waybar() {
 }
 
 cmd_status() {
-    local line left
+    local line left icon
+    # No flavor here — status is a question being answered, so the summary
+    # stays literal. The icon still carries the state.
     if read_state; then
+        icon=$NOTIFY_ICON_ON
         line="Caffeinated — $label"
         if [ "$end" != 0 ]; then
             left=$(( end - $(date +%s) ))
@@ -237,9 +287,10 @@ cmd_status() {
             line="$line ($(fmt_remaining "$left") left)"
         fi
     else
+        icon=$NOTIFY_ICON_OFF
         line="Not caffeinated"
     fi
-    notify "Caffeine" "$line"
+    notify "Caffeine" "$line" "$icon"
     echo "$line"
 }
 
@@ -249,7 +300,7 @@ cmd_stopped() {
     if [ -e "$REPLACING" ]; then
         rm -f "$REPLACING"
     else
-        notify "Decaffeinated"
+        notify "$(flavor off)" "Decaffeinated" "$NOTIFY_ICON_OFF"
     fi
     signal_waybar
 }
@@ -317,12 +368,15 @@ menu() {
     # stable menu preserves muscle memory, and Decaffeinate while already
     # off is a no-op. Decaffeinate is listed first so its glob cannot be
     # shadowed by the Caffeinate pattern.
+    #
+    # Glyphs: md-timer_outline (a duration), md-clock_outline (a point in
+    # time), md-application_outline (an app to follow), md-information.
     choice=$(printf '%s\n' \
         "$ICON_OFF  Decaffeinate" \
         "$ICON_ON  Caffeinate" \
-        $'\U000F0954  Caffeinate for…' \
+        $'\U000F051B  Caffeinate for…' \
         $'\U000F0150  Caffeinate until…' \
-        $'\U000F0109  Caffeinate while…' \
+        $'\U000F0614  Caffeinate while…' \
         $'\U000F02FC  Status' \
         | rofi_menu Caffeine) || true
     case "$choice" in
@@ -464,6 +518,20 @@ selftest() {
     if [ "$(fmt_remaining 30)"   = "<1m"  ]; then pass "fmt: 30s"   ; else fail "fmt: 30s"   ; fi
     if [ "$(fmt_remaining 2520)" = "42m"  ]; then pass "fmt: 2520s" ; else fail "fmt: 2520s" ; fi
     if [ "$(fmt_remaining 6120)" = "1h42m" ]; then pass "fmt: 6120s"; else fail "fmt: 6120s"; fi
+
+    # 60 draws over 20-line pools: an off-by-one in the modulo would index
+    # past the end and hand notify-send an empty summary now and then.
+    blank=0
+    for _ in $(seq 1 60); do
+        [ -n "$(flavor on)" ]  || blank=1
+        [ -n "$(flavor off)" ] || blank=1
+    done
+    if [ "$blank" = 0 ]; then
+        pass "flavor: 60 draws, never empty"
+    else
+        fail "flavor: 60 draws, never empty"
+    fi
+
 
     cmd_off
     sleep 0.5

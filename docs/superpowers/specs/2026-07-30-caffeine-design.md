@@ -205,10 +205,19 @@ Rendered states:
 | timed      | `󰅶 1h42m`   | `active` |
 | while app  | `󰅶 firefox` | `active` |
 
-Icons are `nf-md-cup_outline` (U+F0193) for off and `nf-md-coffee` (U+F0176)
-for on — a hollow cup with no steam becoming a filled cup with steam. Both
-glyphs are present in `NotoSansM Nerd Font Mono`, the family `style.css`
-already sets.
+Icons are `nf-md-coffee_outline` (U+F06CA) for off and `nf-fa-mug_hot`
+(U+0EF59) for on — a hollow cup with no steam becoming a filled mug with
+steam. The pair crosses icon sets because no Material Design coffee glyph
+carries steam; `fa-mug_hot` is the only hot-drink icon in the font that does.
+The cost is a slight width shift, since the off glyph is a cup-and-saucer and
+the on glyph is a handled mug.
+
+Both codepoints were read from the cmap of `NotoSansM Nerd Font Mono`, the
+family `style.css` sets, and the glyphs were rendered and inspected. Checking
+only that *a* glyph exists at a codepoint proves nothing — Nerd Fonts v3
+renumbered the Material Design range, so a plausible-looking codepoint
+resolves to an unrelated icon rather than to nothing. An earlier draft of this
+spec shipped `U+F0193`, which is `md-content_save`: a floppy disk.
 
 Countdown format: `1h42m` above an hour, `42m` under it, `<1m` in the final
 minute.
@@ -223,13 +232,60 @@ Placement in `modules-right`: between `custom/notification` and
 
 `notify-send` via swaync, which is already running:
 
-- On start — `Caffeinated` with the derived label (`indefinite`,
-  `until Thu 17:00`, `while firefox`). Fired client-side from `start()`,
+- On start — a random flavor line as the summary, with
+  `Caffeinated · <label>` as the body. Fired client-side from `start()`,
   not from a unit hook.
-- On stop or expiry — `Decaffeinated`, fired from `_stopped` so both paths
-  are covered by one hook.
-- On `status` — current mode, label, and remaining time; also echoed to
+- On stop or expiry — a random flavor line, body `Decaffeinated`, fired
+  from `_stopped` so both paths are covered by one hook.
+- On `status` — no flavor. Status is a question being answered, so the
+  summary stays literal: mode, label, and remaining time, also echoed to
   stdout for shell use.
+- On a rejected value — no flavor either. Errors stay functional.
+
+Flavor lines are drawn at random from two 20-line pools that deliberately
+mix four registers rather than committing the script to one voice. The draw
+is random, not a true rotation: a no-repeat cycle would need a persisted
+index, and the unit `Description` is meant to be the only state.
+
+### Icons
+
+`budgie-caffeine-cup-full` / `budgie-caffeine-cup-empty`, passed to
+`notify-send -i` **by name**, not by path — `Tela-circle-dracula`, the
+configured GTK icon theme, ships both under `symbolic/status`, and its
+`index.theme` lists that directory so GTK's lookup resolves them. Nothing
+ships in the repo, and the icons re-theme along with everything else.
+
+swaync itself cannot animate: 0.12.6 imports only `gdk_pixbuf_get_formats`
+and `gdk_pixbuf_format_get_mime_types`, with no `gdk_pixbuf_animation_*`
+symbols at all, so a GIF in a notification renders as a frozen first frame.
+It does advertise `body-images`, so a *static* image would work there — but
+the themed icon above already covers that for zero bytes.
+
+### No animated GIF
+
+Considered and dropped. Recorded here so it is not re-litigated.
+
+swaync cannot animate: 0.12.6 imports only `gdk_pixbuf_get_formats` and
+`gdk_pixbuf_format_get_mime_types`, with no `gdk_pixbuf_animation_*` symbols,
+so a GIF in a notification renders as a frozen first frame. Upstream has no
+GIF issue at all, so there is no patch to adopt — only a fork to maintain.
+
+A CSS sprite-sheet animation in swaync's own stylesheet does work, and was
+proven end to end: GTK4 4.22.4 parses `@keyframes`, the `animation`
+shorthand and `steps(8)` without error, and a live window driven that way
+produced 5 distinct frames across 6 captures 70ms apart. `swaync-client
+--reload-css` exists, and `style.css` already `@import`s other files.
+
+It was dropped on targeting. From `notification.vala`, a notification widget
+receives only `low`, `normal`, or `critical` — nothing derived from app-name,
+desktop-entry, category, or hints. The sprite would have to hang off an
+urgency class, so every other application's notification at that urgency
+would render the coffee animation too. Add a global CSS re-parse per toast
+and keyframes that must be regenerated per GIF, and the trade stops being
+worth it for decoration.
+
+An out-of-band `imv` overlay window was also built and worked, but was
+removed as more moving parts than the flavor justified.
 
 ## Files
 
