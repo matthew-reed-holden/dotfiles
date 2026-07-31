@@ -138,7 +138,7 @@
     //   Left  click → rofi menu
     //   Right click → toggle without the menu
     // interval ticks the countdown; RTMIN+8 repaints instantly on every
-    // state change (fired from the unit's ExecStartPost/ExecStopPost).
+    // state change (fired client-side from start(), and from the unit's ExecStopPost).
     "custom/caffeine": {
         "format":         "{}",
         "return-type":    "json",

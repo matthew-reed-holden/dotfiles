@@ -158,6 +158,8 @@ cmd_while() {
             notify "Caffeine" "No such process: $pid"
             return 1
         fi
+        # No forked child here to abandon (unlike the <cmd> branch below), so
+        # unlike there, a failure is left to abort via set -e rather than warned.
         start while 0 \
               "${CAFFEINE_LABEL:-$(ps -p "$pid" -o comm= 2>/dev/null || echo "pid $pid")}" \
               tail --pid="$pid" -f /dev/null
@@ -182,7 +184,6 @@ cmd_while() {
         echo "caffeine: lock failed, running uncaffeinated" >&2
     fi
     wait "$pid" || rc=$?
-    cmd_off
     return "$rc"
 }
 
@@ -336,12 +337,16 @@ menu() {
 }
 
 selftest() {
+    # cmd_for 1h runs mid-suite; a Ctrl-C before its own cmd_off would strand
+    # an hour of suppressed lock/DPMS with only a filled waybar cup as the clue.
+    trap 'cmd_off || true' EXIT
     fails=0
     pass() { printf '  %-44s ok\n'   "$1"; }
     fail() { printf '  %-44s FAIL\n' "$1"; fails=$((fails+1)); }
 
     echo "caffeine selftest"
 
+    # Destructive: stops whatever caffeination was already running.
     cmd_off || true
     sleep 0.5
     if active; then fail "starts with no unit"; else pass "starts with no unit"; fi
@@ -447,7 +452,9 @@ selftest() {
     fi
 
     cmd_while sleep 2
-    sleep 0.5
+    # No cmd_off left in cmd_while to synchronize on — poll for the holder's
+    # own release instead (measured ~0.73s, well under this 4s ceiling).
+    for _ in $(seq 1 20); do active || break; sleep 0.2; done
     if active; then
         fail "while <cmd>: releases when the command exits"
     else
@@ -517,5 +524,5 @@ case "${1:-menu}" in
     waybar)   cmd_waybar ;;
     _stopped) cmd_stopped ;;
     selftest) selftest ;;
-    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|while <cmd>|status|waybar|selftest}" >&2; exit 2 ;;
+    *)        echo "usage: caffeine.sh {menu|on|off|toggle|for <span>|until <time>|while <cmd>|status|waybar|selftest}" >&2; exit 2 ;;
 esac
