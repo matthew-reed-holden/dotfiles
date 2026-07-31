@@ -44,7 +44,13 @@ lifetime defines the caffeinated span:
 | indefinite  | `sleep infinity`                |
 | for / until | `sleep <seconds>`               |
 | while app   | `tail --pid=<pid> -f /dev/null` |
-| while cmd   | the command itself              |
+| while cmd   | `tail --pid=<pid> -f /dev/null` |
+
+`while <cmd>` runs the command in the caller's own shell and points the
+holder at its PID, rather than running the command inside the unit. The
+command keeps the caller's terminal and exit code, waybar repaints
+immediately instead of at command exit, and both `while` variants collapse
+to one holder shape.
 
 ### Why this shape
 
@@ -102,8 +108,9 @@ Starting while already active stops the existing unit first, then starts the
 new one. State never stacks, and there is no "already caffeinated" error case
 to handle.
 
-`while <cmd>` uses `systemd-run --pty` when stdout is a tty so the command
-keeps the terminal; otherwise output goes to the journal.
+`while <cmd>` backgrounds the command in the caller's shell, holds the lock
+against its PID, waits for it, releases the lock, and exits with the
+command's own status.
 
 ### Parsing and validation
 
@@ -211,8 +218,11 @@ New:
 Edited:
 
 - `home-manager/linux/waybar/config.jsonc` — module block, `modules-right` entry
-- `home-manager/linux/waybar/style.css` — `#custom-caffeine` idle (`@overlay1`)
-  and `.active` (`@yellow`) rules from the mocha palette
+- `home-manager/linux/waybar/style.css` — `#custom-caffeine` idle (`@outline`)
+  and `.active` (`@tertiary`) rules, joining the existing
+  `#custom-updates, #custom-notification, #custom-exit` pill block. The
+  stylesheet uses M3 semantic color names, not raw catppuccin ones, because
+  matugen regenerates `colors.css` on wallpaper change.
 - `home-manager/linux/default.nix` — `home.file.".local/bin/caffeine.sh"`
   with `executable = true`, alongside the existing `power-menu.sh` entry
 - `home-manager/linux/hypr/conf/keybindings.conf` — `SUPER SHIFT, C` opens the
