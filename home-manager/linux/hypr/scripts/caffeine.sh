@@ -30,6 +30,8 @@ REPLACING="$RUNTIME/caffeine.replacing"
 ICON_OFF=$'\U000F0193'   # nf-md-cup_outline — hollow cup, no steam
 ICON_ON=$'\U000F0176'    # nf-md-coffee      — filled cup, steam
 
+ROFI_CFG="$HOME/.config/rofi/config-compact.rasi"
+
 active() { systemctl --user -q is-active "$UNIT.service" 2>/dev/null; }
 
 # Sets $mode $end $label. Returns 1 when not caffeinated. The active()
@@ -251,6 +253,88 @@ cmd_stopped() {
     signal_waybar
 }
 
+# Extra args are forwarded so menu_while can add -format i.
+rofi_menu() {
+    local prompt=$1; shift
+    rofi -dmenu -i -p "$prompt" -config "$ROFI_CFG" "$@"
+}
+
+# Free-text prompt. Empty stdin means rofi has no list to match against, so
+# it returns whatever was typed.
+rofi_input() { rofi -dmenu -p "$1" -config "$ROFI_CFG" </dev/null; }
+
+# Every rofi capture needs `|| true`: rofi -dmenu exits 1 when dismissed,
+# which would otherwise kill the script through set -e before the guard
+# below ever runs.
+menu_for() {
+    local c
+    c=$(printf '15m\n30m\n1h\n2h\n4h\n8h\nCustom…\n' | rofi_menu "Caffeinate for") || true
+    if [ -z "$c" ]; then return 0; fi
+    if [ "$c" = "Custom…" ]; then c=$(rofi_input "Timespan (e.g. 90min)") || true; fi
+    if [ -z "$c" ]; then return 0; fi
+    cmd_for "$c"
+}
+
+menu_until() {
+    local c
+    c=$(printf '12:00\n17:00\n23:59\nCustom…\n' | rofi_menu "Caffeinate until") || true
+    if [ -z "$c" ]; then return 0; fi
+    if [ "$c" = "Custom…" ]; then c=$(rofi_input "Time (e.g. 17:00)") || true; fi
+    if [ -z "$c" ]; then return 0; fi
+    cmd_until "$c"
+}
+
+menu_while() {
+    local rows=() idx cmd
+    # No -u: single-process apps share one pid across all their windows, so
+    # deduping on the label would hide real windows and buy nothing.
+    mapfile -t rows < <(
+        hyprctl clients -j \
+            | jq -r '.[] | select(.pid > 0) | "\(.pid)\t\(.class) — \(.title)"' \
+            | sort -t$'\t' -k2
+    )
+    rows+=($'0\tCustom command…')
+
+    # -format i sidesteps having to smuggle the pid through rofi's output:
+    # the index maps straight back into rows.
+    idx=$(printf '%s\n' "${rows[@]}" | cut -f2- | rofi_menu "Caffeinate while" -format i) || return 0
+    if [ -z "$idx" ] || [ "$idx" -lt 0 ]; then return 0; fi
+
+    local pid=${rows[$idx]%%$'\t'*}
+    if [ "$pid" = 0 ]; then
+        cmd=$(rofi_input "Command") || true
+        if [ -z "$cmd" ]; then return 0; fi
+        CAFFEINE_LABEL="${cmd%% *}" cmd_while bash -c "$cmd"
+    else
+        cmd_while --pid "$pid"
+    fi
+}
+
+menu() {
+    local choice
+    # Fixed six entries, deliberately not branching on current state — a
+    # stable menu preserves muscle memory, and Decaffeinate while already
+    # off is a no-op. Decaffeinate is listed first so its glob cannot be
+    # shadowed by the Caffeinate pattern.
+    choice=$(printf '%s\n' \
+        "$ICON_OFF  Decaffeinate" \
+        "$ICON_ON  Caffeinate" \
+        $'\U000F0954  Caffeinate for…' \
+        $'\U000F0150  Caffeinate until…' \
+        $'\U000F0109  Caffeinate while…' \
+        $'\U000F02FC  Status' \
+        | rofi_menu Caffeine) || true
+    case "$choice" in
+        *Decaffeinate)        cmd_off ;;
+        *"Caffeinate for…")   menu_for ;;
+        *"Caffeinate until…") menu_until ;;
+        *"Caffeinate while…") menu_while ;;
+        *Status)              cmd_status ;;
+        *Caffeinate)          cmd_on ;;
+        *)                    return 0 ;;
+    esac
+}
+
 selftest() {
     fails=0
     pass() { printf '  %-44s ok\n'   "$1"; }
@@ -421,7 +505,8 @@ selftest() {
     return $(( fails > 0 ))
 }
 
-case "${1:-}" in
+case "${1:-menu}" in
+    menu)     menu ;;
     on)       cmd_on ;;
     off)      cmd_off ;;
     toggle)   cmd_toggle ;;
