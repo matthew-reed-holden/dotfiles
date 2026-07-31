@@ -546,6 +546,14 @@ home.file.".local/bin/select-flavor.sh" = {
     executable = true;
   };
 
+  # Caffeine — hold a systemd-inhibit lock in a transient user unit so
+  # hypridle stops locking/blanking. rofi menu + waybar module.
+  # See docs/superpowers/specs/2026-07-30-caffeine-design.md
+  home.file.".local/bin/caffeine.sh" = {
+    source = ./hypr/scripts/caffeine.sh;
+    executable = true;
+  };
+
   home.file.".local/bin/screenshot.sh" = {
     source = ./hypr/scripts/screenshot.sh;
     executable = true;

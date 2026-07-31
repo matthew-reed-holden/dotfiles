@@ -20,7 +20,7 @@
 
     "modules-left":   ["hyprland/window"],
     "modules-center": ["hyprland/workspaces"],
-    "modules-right":  ["custom/weather", "group/hardware", "bluetooth", "network", "pulseaudio", "group/tools", "custom/updates", "custom/notification", "custom/exit", "tray", "clock"],
+    "modules-right":  ["custom/weather", "group/hardware", "bluetooth", "network", "pulseaudio", "group/tools", "custom/updates", "custom/notification", "custom/caffeine", "custom/exit", "tray", "clock"],
 
     // ─── Hardware group: cpu (header) + memory (revealed on hover) ───
     "group/hardware": {
@@ -131,6 +131,22 @@
         "on-click":       "swaync-client -t -sw",
         "on-click-right": "swaync-client -d -sw",
         "tooltip-format": "Notifications\nLeft: toggle center\nRight: clear all"
+    },
+
+    // Caffeine — idle inhibitor. Hollow cup when idle, filled cup with
+    // steam when caffeinated; timed modes append a countdown.
+    //   Left  click → rofi menu
+    //   Right click → toggle without the menu
+    // interval ticks the countdown; RTMIN+8 repaints instantly on every
+    // state change (fired client-side from start(), and from the unit's ExecStopPost).
+    "custom/caffeine": {
+        "format":         "{}",
+        "return-type":    "json",
+        "exec":           "~/.local/bin/caffeine.sh waybar",
+        "interval":       15,
+        "signal":         8,
+        "on-click":       "~/.local/bin/caffeine.sh",
+        "on-click-right": "~/.local/bin/caffeine.sh toggle"
     },
 
     // Power menu.
