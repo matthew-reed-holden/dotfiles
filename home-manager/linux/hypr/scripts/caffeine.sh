@@ -114,11 +114,15 @@ cmd_for() {
 }
 
 cmd_until() {
-    local target now
-    if ! target=$(date -d "${1:-}" +%s 2>/dev/null); then
+    local out target now
+    # Capture rather than discard, so the parser's own message reaches
+    # stderr — same contract as parse_timespan's.
+    if ! out=$(date -d "${1:-}" +%s 2>&1); then
+        printf '%s\n' "$out" >&2
         notify "Caffeine" "Bad time: ${1:-}"
         return 1
     fi
+    target=$out
     now=$(date +%s)
     # ponytail: naive +1 day rollover, ignores DST. Fine for a wake lock;
     # switch to `date -d "tomorrow $1"` if an hour of drift ever matters.
@@ -205,6 +209,11 @@ selftest() {
         fail "until: rejects unparseable time"
     else
         pass "until: rejects unparseable time"
+    fi
+    if active; then
+        fail "until: rejected input starts no unit"
+    else
+        pass "until: rejected input starts no unit"
     fi
 
     cmd_until 23:59
