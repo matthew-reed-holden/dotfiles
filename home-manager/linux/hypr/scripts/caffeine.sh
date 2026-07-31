@@ -64,12 +64,20 @@ start() {
         : >"$REPLACING"
         systemctl --user stop "$UNIT.service"
     fi
-    systemd-run --user --unit="$UNIT" \
+    # Report systemd-run's status rather than signal_waybar's. Callers that
+    # test start (cmd_while does, to keep set -e from abandoning its forked
+    # child) would otherwise always see success, because notify and
+    # signal_waybar both end in `|| true` — and would announce
+    # "Caffeinated" for a unit that never started.
+    if ! systemd-run --user --unit="$UNIT" \
         --description="$mode|$end|$label" \
         --property=CollectMode=inactive-or-failed \
         --property=ExecStopPost="/usr/bin/bash $SELF _stopped" \
         systemd-inhibit --what=idle:sleep --who=caffeine --why="$label" \
         "$@" >/dev/null
+    then
+        return 1
+    fi
     notify "Caffeinated" "$label"
     signal_waybar
 }
