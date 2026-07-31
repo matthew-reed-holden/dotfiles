@@ -184,6 +184,62 @@ cmd_while() {
     return "$rc"
 }
 
+fmt_remaining() {
+    local s=$1 h m
+    if [ "$s" -lt 60 ]; then echo "<1m"; return; fi
+    h=$(( s / 3600 ))
+    m=$(( (s % 3600) / 60 ))
+    if [ "$h" -gt 0 ]; then echo "${h}h${m}m"; else echo "${m}m"; fi
+}
+
+# jq builds the JSON so labels containing quotes, backslashes, or newlines
+# cannot break waybar's parser.
+cmd_waybar() {
+    local text tip class left
+    if read_state; then
+        class=active
+        case "$mode" in
+            for|until)
+                left=$(( end - $(date +%s) ))
+                if [ "$left" -lt 0 ]; then left=0; fi
+                text="$ICON_ON $(fmt_remaining "$left")"
+                tip="Caffeinated $label — $(fmt_remaining "$left") left"
+                ;;
+            while)
+                text="$ICON_ON $label"
+                tip="Caffeinated while $label is running"
+                ;;
+            *)
+                text="$ICON_ON"
+                tip="Caffeinated — indefinite"
+                ;;
+        esac
+    else
+        class=idle
+        text="$ICON_OFF"
+        tip="Not caffeinated"
+    fi
+    jq -nc --arg t "$text" --arg c "$class" \
+           --arg tip "$tip"$'\n'"Left: menu  Right: toggle" \
+           '{text: $t, alt: $c, class: $c, tooltip: $tip}'
+}
+
+cmd_status() {
+    local line left
+    if read_state; then
+        line="Caffeinated — $label"
+        if [ "$end" != 0 ]; then
+            left=$(( end - $(date +%s) ))
+            if [ "$left" -lt 0 ]; then left=0; fi
+            line="$line ($(fmt_remaining "$left") left)"
+        fi
+    else
+        line="Not caffeinated"
+    fi
+    notify "Caffeine" "$line"
+    echo "$line"
+}
+
 # ExecStopPost hook. Running the release side from systemd rather than the
 # client means expiry, manual stop, and menu-driven stop all converge here.
 cmd_stopped() {
@@ -314,6 +370,53 @@ selftest() {
         pass "while <cmd>: releases when the command exits"
     fi
 
+    if [ "$(fmt_remaining 30)"   = "<1m"  ]; then pass "fmt: 30s"   ; else fail "fmt: 30s"   ; fi
+    if [ "$(fmt_remaining 2520)" = "42m"  ]; then pass "fmt: 2520s" ; else fail "fmt: 2520s" ; fi
+    if [ "$(fmt_remaining 6120)" = "1h42m" ]; then pass "fmt: 6120s"; else fail "fmt: 6120s"; fi
+
+    cmd_off
+    sleep 0.5
+    if [ "$(cmd_waybar | jq -r .class)" = idle ]; then
+        pass "waybar: idle class when off"
+    else
+        fail "waybar: idle class when off"
+    fi
+    if [ "$(cmd_waybar | jq -r .text)" = "$ICON_OFF" ]; then
+        pass "waybar: hollow cup when off"
+    else
+        fail "waybar: hollow cup when off"
+    fi
+
+    cmd_for 1h
+    sleep 0.5
+    if [ "$(cmd_waybar | jq -r .class)" = active ]; then
+        pass "waybar: active class when on"
+    else
+        fail "waybar: active class when on"
+    fi
+    if cmd_waybar | jq -e '.text | test("^\\S+ [0-9]+h?[0-9]*m$")' >/dev/null; then
+        pass "waybar: timed text carries a countdown"
+    else
+        fail "waybar: timed text carries a countdown"
+    fi
+    if cmd_waybar | jq -e . >/dev/null; then
+        pass "waybar: emits valid JSON"
+    else
+        fail "waybar: emits valid JSON"
+    fi
+    cmd_off
+    sleep 0.5
+
+    start while 0 'weird "quoted" label' sleep 5
+    sleep 0.5
+    if cmd_waybar | jq -e . >/dev/null; then
+        pass "waybar: JSON survives quotes in the label"
+    else
+        fail "waybar: JSON survives quotes in the label"
+    fi
+    cmd_off
+    sleep 0.5
+
     echo "$fails failure(s)"
     return $(( fails > 0 ))
 }
@@ -325,7 +428,9 @@ case "${1:-}" in
     for)      shift; cmd_for   "${1:-}" ;;
     until)    shift; cmd_until "${1:-}" ;;
     while)    shift; cmd_while "$@" ;;
+    status)   cmd_status ;;
+    waybar)   cmd_waybar ;;
     _stopped) cmd_stopped ;;
     selftest) selftest ;;
-    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|while <cmd>|selftest}" >&2; exit 2 ;;
+    *)        echo "usage: caffeine.sh {on|off|toggle|for <span>|until <time>|while <cmd>|status|waybar|selftest}" >&2; exit 2 ;;
 esac
