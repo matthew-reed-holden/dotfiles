@@ -58,6 +58,7 @@ tesseract-data-eng   # English OCR model
 bluez                # Bluetooth stack (waybar bluetooth module)
 bluez-utils          # bluetoothctl
 blueman              # Bluetooth GUI (clicked from waybar bluetooth)
+libnotify            # provides `notify-send` for caffeine toasts
 
 
 # ─── Audio (PipeWire owns everything) ────────────────────
